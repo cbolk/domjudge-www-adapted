@@ -142,20 +142,22 @@ function renderContestFull($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	$showfinal = 0;
 	$cstarted = 1;
 	$daysleft = (int)((strtotime($cdata['endtime']) - strtotime($now)) / (24 * 3600));
+	$timeleft = (int)((strtotime($cdata['endtime']) - strtotime($now)) / 3600);
 	/* single problem per challenge */
 	$rowprob = $probs->next();
 	$problemtitle = $rowprob['name'];
 	$problemdescription = $rowprob['longdescription'];
 
 	// page heading with contestname and start/endtimes
-	echo "<h1>" . htmlspecialchars($cdata['contestname']) . "</h1>";
 	echo "<div class='content_box'>";
 	echo "<h2 class='challenges_wd black'>" . $problemtitle . "</h2>";
 	echo "<p class='right time_remaining'>tempo rimasto: ";
 	if($daysleft == 1) 
 		echo "<span> ". $daysleft . " giorno</span></p>";
-	else
+	else if ($daysleft > 1)
 		echo "<span> ". $daysleft . " giorni</span></p>";
+	else /* hours and/or minutes */ 
+		echo "<span>meno di un giorno</span></p>";
 	if ( $showfinal ) {
 		echo "<h3>Statistiche finali</h3>";
 	} elseif ( ! $cstarted ) {
@@ -255,8 +257,8 @@ function renderContestStats($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	$problemtitle = $rowprob['name'];
 
 	// page heading with contestname and start/endtimes
-	echo "<h1>" . htmlspecialchars($cdata['contestname']) . "</h1>";
 	echo "<div class='content_box'>";
+	echo "<h2 class='hblue'>Specifica problema</h2>";
 	echo "<h2 class='challenges_wd black'>" . $problemtitle . "</h2>";
 	echo "<div class='clear top bottom'>";
 	echo "<div class='description'>";
@@ -264,6 +266,7 @@ function renderContestStats($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	echo "<div class='coding'>" . substr($rowprob['longdescription'],0,500) . " ...</div>";
 	echo "</div>"; /* description */
 	echo "<p class='clear'></p>";
+	echo "<h2 class='hblue'>Partecipazione</h2>";
 	echo "<div class='boxinthemiddle'>"; 
 	echo "<div class='challenge_info left'><p>". fixedDigitFormat($teams['numpartecipants'],3) ."</p><h4>partecipanti</h4></div>";
 	echo "<div class='challenge_info follow left'><p>". fixedDigitFormat($subs['number'],3) ."</p><h4>soluzioni inviate</h4></div>";
@@ -273,9 +276,6 @@ function renderContestStats($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	echo "</div>"; /* boxinthemiddle */
 	echo "<hr class='points_line bottom clear'/>";
 	echo "</div>"; /* content_box */
-	
-	echo "</div>"; /* main_content */
-	echo "</div>"; /*main*/
 	return;
 }
 
@@ -302,8 +302,7 @@ function fixedDigitFormat($val, $ndig){
 function isContestClosed($cdata){
 	$end = $cdata['endtime'];
 	$now = now();
-	$daysleft = (int)((strtotime($end) - strtotime($now)) / (24 * 3600));
-	if($daysleft > 0)
+	if((strtotime($end) - strtotime($now)) > 0)
 		return 1;
 	return 0;
 }

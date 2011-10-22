@@ -272,7 +272,9 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	$cstarted = difftime($cdata['starttime'],$now) <= 0;
 
 	// page heading with contestname and start/endtimes
-	echo "<h1>Scoreboard for '" . htmlspecialchars($cdata['contestname']) . "'</h1>\n\n";
+	echo "<h2>Scoreboard for '" . htmlspecialchars($cdata['contestname']) . "'</h2>\n\n";
+	echo "<div class='content_box'>";
+//	echo "<h3 class='challenges_wd black'>" . $problemtitle . "</h3>";
 
 	if ( $showfinal ) {
 		echo "<h4>final standings</h4>\n\n";
@@ -298,7 +300,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	// configuration
 	$SHOW_AFFILIATIONS = dbconfig_get('show_affiliations', 1);
 
-	echo '<table class="scoreboard' . (IS_JURY ? ' scoreboard_jury' : '') . "\">\n";
+	echo '<table class="scoreboard adapted' . (IS_JURY ? ' scoreboard_jury' : '') . "\">\n";
 
 	// output table column groups (for the styles)
 	echo '<colgroup><col id="scorerank" />' .
@@ -309,21 +311,21 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 		"</colgroup>\n";
 
 	// column headers
-	echo '<tr class="scoreheader">' .
-		'<th title="rank" scope="col">rank</th>' .
-		( $SHOW_AFFILIATIONS ? '<th title="team affiliation" colspan="3" scope="col">' : '<th title="team affiliation" scope="col">' ) . 'participants</th>' .
-		'<th title="# solved / penalty time" colspan="2" scope="col">score</th>';
-	echo '<th title="problems" colspan="' . count($probs) . '" scope="col">problems</th>';
+	echo '<tr>' .
+		'<th title="rank" class="theader" scope="col">rank</th>' .
+		( $SHOW_AFFILIATIONS ? '<th title="team affiliation"  class="theader"colspan="3" scope="col">' : '<th title="team affiliation"  class="theader" scope="col">' ) . 'participants</th>' .
+		'<th  class="theader" title="# solved / penalty time" colspan="2" scope="col">score</th>';
+	echo '<th  class="theader" title="problems" colspan="' . count($probs) . '" scope="col">problems</th>';
 	echo '</tr>';
-	echo '<tr class="scoreheader detail">' .
-		'<th title="rank" scope="col">' . jurylink(null,'#') . '</th>' .
-		( $SHOW_AFFILIATIONS ? '<th title="team affiliation" colspan="2" scope="col">' .
+	echo '<tr class="detail">' .
+		'<th title="rank" class="theader" scope="col">' . jurylink(null,'#') . '</th>' .
+		( $SHOW_AFFILIATIONS ? '<th title="team affiliation" colspan="2" class="theader" scope="col">' .
 		jurylink('team_affiliations.php','affiliation') . '</th>' : '' ) .
-		'<th title="team name" scope="col">' . jurylink('teams.php','team') . '</th>' .
-		'<th title="solved" scope="col">#&nbsp;solved</th>' . 
-		'<th title="penalty" scope="col">penalty (sec.)</th>';
+		'<th title="team name" class="theader" scope="col">' . jurylink('teams.php','team') . '</th>' .
+		'<th title="solved" class="theader" scope="col">#&nbsp;solved</th>' . 
+		'<th title="penalty" class="theader" scope="col">penalty (s.)</th>';
 	foreach( $probs as $pr ) {
-		echo '<th title="problem \'' . htmlspecialchars($pr['name']) . '\'" scope="col">' .
+		echo '<th title="problem \'' . htmlspecialchars($pr['name']) . '\'" class="theader" scope="col">' .
 			jurylink('problem.php?id=' . urlencode($pr['probid']),
 				htmlspecialchars($pr['name']) .
 				(!empty($pr['color']) ? ' <img style="background-color: ' .
@@ -337,15 +339,18 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 
 	// print the main scoreboard rows
 	$prevsortorder = -1;
+	$iseven = 0;
 	foreach( $scores as $team => $totals ) {
-
 		// rank, team name, total correct, total time
-		echo '<tr';
+		echo '<tr class="';
+		echo ( $iseven ? 'roweven': 'rowodd' );
+		$iseven = !$iseven;
 		if ( $totals['sortorder'] != $prevsortorder ) {
-			echo ' class="sortorderswitch"';
+			echo ' sortorderswitch';
 			$prevsortorder = $totals['sortorder'];
 			$prevteam = null;
 		}
+		echo '"';
 		// check whether this is us, otherwise use category colour
 		if ( @$myteamid == $team ) {
 			echo ' id="scorethisisme"';
@@ -372,7 +377,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 				$affillogo = '../images/affiliations/' .
 					urlencode($teams[$team]['affilid']) . '.png';
 				if ( is_readable($affillogo) ) {
-					echo '<img src="' . $affillogo . '"' .
+					echo '<img class="imgmiddle" src="' . $affillogo . '"' .
 						' alt="'   . htmlspecialchars($teams[$team]['affilid']) . '"' .
 						' title="' . htmlspecialchars($teams[$team]['affilname']) . '" />';
 				} else {
@@ -393,7 +398,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 				}
 				if ( IS_JURY ) echo '</a>';
 			}
-			echo '</td>';
+			echo '&nbsp;</td>';
 		}
 		echo
 			'<td class="scoretn"' .
@@ -410,7 +415,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 		// for each problem
 		foreach ( array_keys($probs) as $prob ) {
 
-			echo '<td class="scoreresult ';
+			echo '<td class="scoreresult aright ';
 			// CSS class for correct/incorrect/neutral results
 			if( $matrix[$team][$prob]['is_correct'] ) {
 				echo 'score_correct"';
@@ -430,7 +435,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 								'&amp;restrict=probid:' . urlencode($prob),
 			                    $str) . '</td>';
 		}
-		echo '</tr>';
+		echo "</tr>\n";
 	}
 
 
@@ -482,6 +487,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	echo "<p id=\"lastmod\">Last Update: " .
 		date('j M Y H:i', $lastupdate) . "</p>\n\n";
 
+	echo "</div>";  /* content_box */
 	return;
 }
 
@@ -492,7 +498,6 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 function putScoreBoard($cdata, $myteamid = null, $static = FALSE) {
 
 	$sdata = genScoreBoard($cdata);
-
 	renderScoreBoard($cdata,$sdata,$myteamid,$static);
 }
 
@@ -514,7 +519,7 @@ function putTeamRow($cdata, $teamid) {
 	                 ORDER BY probid', $cid);
 
 	// column headers
-	echo "<tr class=\"scoreheader\"><th colspan='2'>problem</th><th>score</th></tr>\n";
+	echo "<tr><th colspan='2' class='theader'>problem</th><th class='theader'>score</th></tr>\n";
 
 	// initialize the arrays we'll build from the data
 	$MATRIX = array();
@@ -554,7 +559,7 @@ function putTeamRow($cdata, $teamid) {
 			( !empty($probdata['color']) ?
 			  '<img style="background-color: ' . htmlspecialchars($probdata['color']) .
 			  ';" alt="problem colour ' . htmlspecialchars($probdata['color']) .
-			  '" src="../images/circle.png" /> ' : '' ) .
+			  '" class="imgmiddle" src="../images/circle.png" /> ' : '' ) .
 		'</td><td class="probid" title="' .
 			htmlspecialchars($probdata['name']) . '">' . htmlspecialchars($probdata['name']) . '</td><td class="right ';
 		// CSS class for correct/incorrect/neutral results
@@ -576,7 +581,7 @@ function putTeamRow($cdata, $teamid) {
 		echo "</td></tr>\n";
 	}
 
-	echo "<tr id=\"scoresummary\" title=\"#correct / time\"><td colspan='2'>Summary</td>".
+	echo "<tr id=\"scoresummary\" title=\"#correct / time\"><td colspan='2'>summary:</td>".
 		"<td>" . $SUMMARY['num_correct'] . " / " . $SUMMARY['total_time'] . "</td></tr>\n";
 
 	echo "</table>\n\n";

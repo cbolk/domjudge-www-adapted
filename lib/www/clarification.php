@@ -266,7 +266,7 @@ function confirmClar() {
 			$teams = $DB->q('KEYVALUETABLE SELECT login, CONCAT(login, ": ", name) as name
 			                 FROM team
 			                 ORDER BY categoryid ASC, name ASC');
-			$options = array_merge($options,$teams);
+			$options = $options + $teams;
 		} else {
 			if ( $clar['sender'] ) {
 				$options[$clar['sender']] = $clar['sender'] .': '.

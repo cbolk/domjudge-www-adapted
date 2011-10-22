@@ -10,7 +10,8 @@
  */
 
 /** Text symbol used in output to represent a circle */
-define('CIRCLE_SYM', '&#9679;');
+/* define('CIRCLE_SYM', '&#9679;'); */
+define('CIRCLE_SYM', '&#x25EF;');
 
 /**
  * Print a list of submissions, either all or only those that
@@ -85,7 +86,7 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 		"<th scope='col' class='theader'>lang</th>" .
 		"<th scope='col' class='theader' colspan='2'>result</th>" .
 		(IS_JURY ? "<th scope='col' class='theader'>judgehost</th>" : '') .
-		(IS_JURY ? "<th scope='col' class='theader'>verified</th><th scope='col' class='theader'>by</th>" : '') .
+		(IS_JURY ? "<th scope='col' class='theader'>ver.</th><th scope='col' class='theader'>by</th>" : '') .
 
 		"</tr>\n";
 
@@ -127,7 +128,7 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 				"<a$link>" . htmlspecialchars(str_cut($row['teamname'],20)) . '</a></td>';
 		}
 		echo '<td class="probid" title="' . htmlspecialchars($row['probname']) . '">' .
-			"<a$link>" . htmlspecialchars($row['probname']) . " [" . htmlspecialchars($row['probid']) . ']</a></td>';
+			"<a$link>" . htmlspecialchars($row['probname']) . '</a></td>';
 		echo '<td class="langid acenter" title="' . htmlspecialchars($row['langname']) . '">';
 		echo "<a$link>" ; 
 		if ( is_readable($languageicon) ) {

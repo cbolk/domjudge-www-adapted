@@ -1,0 +1,536 @@
+/* $Id: style.css 3209 2010-06-12 00:13:43Z eldering $ */
+
+body {
+	color: black;
+	background-color: white;
+	font-family: Andika, 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+	line-height: 1.4em;
+	color: #959595;
+	background-color: #FFF;
+	margin-top: 0px;
+	border-top: 7px solid #133A87;
+	border-bottom: 7px solid #133A87;
+}
+
+a:link, a:visited, a:hover {color: #000066;}
+a:hover {text-decoration: underline;}
+
+img {	border: 0; }
+
+.sol {
+	font-weight: bold;
+	font-variant: small-caps;
+}
+
+.sol_correct      { color: green;  }
+.sol_incorrect    { color: red;    }
+.sol_queued       { color: gray;   }
+
+tr.sub_ignore td {
+	text-decoration: line-through;
+}
+
+.disabled         { color: silver; }
+.disabled a       { color: gray;   }
+.nodata           { color: gray; font-style: italic; }
+
+/* general table layout (not in scoreboard or lists) */
+table {
+	border-collapse: separate;
+	border-spacing: 2px;
+}
+
+th {vertical-align: bottom;}
+
+caption {
+	font-weight: bold;
+	margin-bottom: 1ex;
+}
+
+hr {
+	border: 0;
+	height: 1px;
+	background-color: gray;
+	margin-top: 2em;
+}
+address { font-size: smaller; }
+
+tr.unread td {
+	font-weight: bold;
+}
+
+/* more spacing in lists of teams, submissions, etc. */
+.list {
+	border-collapse: collapse;
+	border-spacing: 0px;
+	font-size: 13px;
+}
+.list td, .list th {
+	vertical-align: bottom;
+}
+
+.list tr { border-bottom: 1px solid silver; }
+tr.roweven { background: #ededed; }
+.list tr:hover { background: #ffffcc; }
+.list thead tr { border-bottom-color: black;}
+.list thead tr:hover { background: white; }
+.list a {
+	text-decoration: none;
+	color: black;
+	display: block;
+	padding: 3px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+.list .disabled a  { color: silver;   }
+.list .editdel  a  { display: inline; }
+
+.output_text {
+	border-top: 1px dotted #C0C0C0;
+	border-bottom: 1px dotted #C0C0C0;
+	background-color: #FAFAFA;
+	margin: 0;
+	padding: 5px;
+	font-family: monospace;
+}
+
+span.differ {color: Red;}
+span.endline {color: Orange;}
+span.extra {color: Red;}
+span.diff-old {color: Red;}
+span.diff-new {color: Green;}
+
+
+.langid { font-variant: small-caps; }
+
+
+
+fieldset {
+	margin: 2em;
+	padding: 1em;
+}
+
+.error {
+	color: red;
+	font-family: monospace;
+	border: 1px dotted red;
+}
+
+legend {
+	font-variant: small-caps;
+	font-weight: bold;
+	padding: .1ex .5ex;
+}
+
+.error legend {
+	font-size: x-large;
+	border-right: 1px solid gray;
+	border-bottom: 1px solid gray;
+}
+
+
+.scoreboard {  border: 1px solid #ccc;padding: 2px;}
+.scoreboard td { font-size: small; }
+.scoreboard tr { border-bottom: 1px solid silver; }
+.scoreboard td, .scoreboard th {
+	padding: 3px;
+}
+.scoreboard a {
+	display: block;
+	padding: 3px;
+	text-decoration: none;
+	color: black;
+}
+
+.scoreboard .scoretn { padding: 0px; width: 25ex; }
+.scoreboard .scoreaf { white-space: nowrap; }
+
+.scoreheader {
+	font-variant: small-caps;
+	border-bottom: 2px solid black;
+}
+.score_correct   { background: #33FF66; }
+.score_incorrect { background: #FF6666; }
+/* .score_neutral   { background: white;   } */
+
+#scoresolv,#scoretotal { width: 5em; }
+.scorenc,.scorett,.scorepl { text-align: right; width: 2ex; }
+td.scorenc { border-color: silver; }
+
+.scoreprob { width: 7em; }
+.scoreaffil { text-align: center; }
+
+#scoresummary {
+	border-top: 2px solid black;
+	border-bottom: none;
+	font-weight: bold;
+	color: #133A87;
+}
+#scorethisisme .scoretn {
+	background: #ff6600;
+	font-weight: bold;
+}
+
+#lastmod {
+	color: gray;
+	font-size: x-small;
+	position: absolute; right: 1ex; margin-top: 1em;
+}
+
+#teamscoresummary { float: right;}
+#teamscoresummary td { padding: 3px; }
+#teamscoresummary th { padding: 3px; }
+
+#teampicture { position: absolute; right: 2ex; top: 7ex; width: 70%; }
+
+/* between different sortorder-categories, print a thick line */
+.sortorderswitch { border-top: 2px solid black; }
+
+/* between different contests, print a thin line */
+.contestswitch { border-top: 1px solid black; }
+
+
+/* EXTRAS */
+body{text-align: center;}
+#main {
+	width: 800px;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 15px;
+	background-color: white;
+	min-height: 600px;
+	text-align: left;
+}	
+
+h1 {
+	font-size: 30px;
+	border-bottom: 1px solid #CCC;
+	color: #393939;
+	display: block;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: bold;
+	height: 30px;
+	line-height: 30px;
+	margin: 0px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	padding: 0px 10px 10px 0px;
+	text-align: center;
+}
+
+.tcenter{text-align:center;}
+
+#header {
+	margin: 0 auto;
+}
+
+#menutop a {
+	outline: none;
+	text-decoration: none;
+	color: #396CCF;
+}
+
+#menutop a.new {
+	color: #FF0000;
+}
+
+#menutop ul.nev {
+	font: 13px helvetica,arial,freesans,clean,sans-serif;
+	line-height: 1.4em;
+	padding: 8px 3px 8px 2px;
+	font-weight: bold;
+	text-shadow: white 1px 1px 0px;
+	border-color: #EEE;
+	border: 1px solid #E9E9E9;
+	border-bottom-color: whiteSmoke;
+	border-radius: 5px;
+	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+	box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+
+#menutop ul.nav {
+	font: 15px helvetica,arial,freesans,clean,sans-serif;
+	line-height: 1.4em;
+	padding: 8px 3px 8px 2px;
+	font-weight: bold;
+	text-shadow: white 1px 1px 0px;
+	border-bottom: 2px solid #E9E9E9;
+}
+
+#menutop ul.nav li {
+	display: inline;
+	margin: 0;
+	padding: 0px 11px 0px 13px;
+	list-style-type: none;
+	background: url(./images/nav-rule.png) no-repeat 0px 50%;
+	line-height: 1.4em;
+}
+
+#menutop ul.nav li:first-child {
+	background: transparent;
+}
+
+
+
+.clock-date {
+	float: left;
+	font-family: Andika, 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+	border-color: #EEE;
+	border: 1px solid #E9E9E9;
+	border-bottom-color: whiteSmoke;
+	border-radius: 5px;
+	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+	box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+	text-align: center;
+	padding: 6px;
+}
+
+.clock-date strong{ 
+	padding-top: 18px;
+	padding-bottom: 12px;
+	text-shadow: white 1px 1px 0px;
+	font-size: 3.5em;
+	display: block;
+	color: #133A87;
+}
+.clock-date em {
+	font-style: normal;
+	font-size: 1.1em;
+	color: #8A8A8A;
+}
+
+#timeleft {
+/*	background: url(./images/bg_date_bot.gif) bottom left no-repeat;
+*/	color: #FF0000;
+	font-size: 0.9em;
+	}
+
+#footer {
+	background-color: transparent;
+	bottom: 0px;
+	color: #636363;
+	display: block;
+	line-height: 18px;
+	border-top:1px solid #E9E9E9;
+	margin-top: 20px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	padding-right: 0px;
+	padding-top: 0px;
+	position: relative;
+	font-size: 13px;
+	text-align: center;
+}
+
+
+/* tables to list attributes */
+.rowcaption {border: 1px solid #D8D8D8; background-color: #EAEAEA;}
+.smallpic {height: 16px; width: 16px; vertical-align: middle;}
+.vmiddle {vertical-align: middle;}
+.vtop{vertical-align: top;}
+.backnav a {text-decoration: none; color: #396CCF; font-size: 0.9em; font-variant: small-caps;}
+.dashed_line{border:1px dashed #CCC;margin:0 0 0 -3px}
+.imgmiddle img {vertical-align: middle; padding: 0px;}
+
+#toptitle{
+/*	width: 1000px; */
+	font-size: 22px;
+	text-align: center;
+	color:  #133A87;
+	font-weight: bold;
+	border-bottom: whiteSmoke 2px solid;
+/*	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.2); */
+/*	box-shadow: 0 1px 1px rgba(0,0,0,0.2); */
+	padding: 10px;
+}
+#toptitle a{text-decoration: none;}
+
+.pagetitle {
+	color: #FFF;
+	background-color:  #133A87;
+	padding: 15px;
+	font-weight: bold;
+	font-size: 30px;
+	text-align: center;
+}
+
+.hblue{color:  #133A87;}
+
+.vspace50{min-height: 50px;}
+.vspace100{
+	min-height: 100px;
+}
+
+/* extra login */
+.login{
+	border: 2px solid  whiteSmoke;
+	width: 405px;
+	margin: auto;
+}
+.login a.login_request, .login a.login_signin{display:block;width:180px;height:24px;margin-bottom:8px;padding:12px 10px 6px 20px;cursor:pointer;font-size:14px;color:white;text-decoration:none; font-weight:bold;}
+.login a.login_request{background:url("./images/login/green_button_active.png") no-repeat bottom center}
+.login a.login_signin{background:url("./images/login/blue_button_active.png") no-repeat bottom center}
+
+.login h3.login_member{font-size:34spx}
+.login h4.login_member{font-size:20px;margin:5px 0px 5px 2px;}
+
+
+
+/* extra contest */
+.w200{width: 200px;}
+.bright{border-right: 1px solid #000;}
+.borderlight{border: 1px solid #656565;}
+.right {float: right;}
+.left{float: left;}
+.bottom{margin-bottom:15px}
+.top{margin-top:15px}
+.clear{clear: both;}
+.black{color: black;}
+.aleft{text-align: left;}
+.aright{text-align: right;}
+.acenter{text-align: center;}
+
+.content_box{padding:12px 12px 20px 12px;width:680px;margin: auto;}
+.challenges_wd{text-align: center;}
+.challenge_info {width:130px;min-height:100px;padding-left:10px;padding-right:10px;}
+.challenge_info p{font-size:86px;margin: 0px;padding:0px;text-align: center;}
+.challenge_info p{font-family: 'Prociono', serif;font-size: 55px;color: #0058EE;line-height: 1;}
+.challenge_info h2{font-size:22px;color:black;}
+h3.challenge_info {font-size:22px;color:#000;}
+.challenge_info h4{font-size:14px;color:#000;margin: 0px;padding:0px;text-align: center;}
+.challenge_info.follow p{color:#30A100}
+.challenge_open{padding:16px}
+.challenge_dates{font-family:arial}
+.challenge_timezone{color:#999;font-style:italic;font-size:12px;padding-left:12px}
+hr.points_line{clear:both;float:left;margin:10px 0 0 0;border:0;border-top:1px solid #ccc;border-style:dashed;}
+hr.points_line{display:block;}
+.coding pre{padding:6px;color:#000;background-color:#eee;font-size:11px}
+pre.brush{color:#eee;background:#333;padding:6px 12px;margin-bottom:15px}
+
+.boxinthemiddle{text-align: center;margin: auto;width: 320px;}
+
+/* extra */
+input[type=button],input[type=submit]{cursor:pointer}
+.textarea, .input{border:1px solid #ccc;padding:5px 5px 0 5px;height:35px;font-size:24px;-moz-box-shadow:inset 0 0 5px #e1ddda;-webkit-box-shadow:inset 0 0 5px#e1ddda;box-shadow:inner 0 0 5px #e1ddda;font-family:arial;resize:none}
+registration.input{width: 100px;}
+
+.grayback{background: #ddd;}
+
+th.theader {
+	font-size: 14px;
+	font-weight: bold;
+	color: #000;
+	border-top: 1px solid #000;
+	border-bottom: 1px solid #000;
+	letter-spacing: 1.5px;
+	text-align: center;
+	padding: 6px 6px 6px 6px;
+}
+
+th.detail{border-bottom: 1px solid #000;}
+tr.detail {
+	font-size: 14px;
+	font-weight: bold;
+	border: 1px solid #ccc;
+	border-bottom: 1px solid #000;
+	text-align: center;
+	padding: 2px 2px 2px 2px;
+}
+
+table.adapted{padding-left: 1px; padding-right: 1px;}
+
+
+/* SOURCE CODE DIFF HIGHLIGHT */
+#diff{
+	background:		#fff;
+	border:			5px solid #ccc;
+	margin:			50px auto 0px auto;
+	padding:		10px;
+	width:			940px;
+}
+#diff pre
+{
+	white-space:	normal;
+}
+ins, del
+{
+	display:		block;
+	min-height:		10px;
+	padding:		5px;
+}
+ins *, del *
+{
+	display:		inline;
+	margin:			0px;
+	padding:		0px;
+}
+ins
+{
+	background:		#8EE884;
+}
+del
+{
+	background:		#E88484;
+}
+
+#tablespec {
+	font: 11px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	border-bottom: 1px solid #6786C3;
+	border-left: 1px solid #6786C3;	
+}
+
+#tablespec th {
+	font: bold 11px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	color: #000;
+	border-right: 1px solid #6786C3;
+	border-bottom: 1px solid #6786C3;
+	border-top: 1px solid #6786C3;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	text-align: left;
+	padding: 6px 6px 6px 12px;
+	background: #6786C3;
+	vertical-align: top;
+}
+
+#tablespec th.spec {	
+	border-left: 1px solid #6786C3;
+	border-top: 0;
+	background: #fff url(./images/triangle1.gif) no-repeat;
+	font: bold 10px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+}
+
+#tablespec th.specalt {
+	border-left: 1px solid #6786C3;
+	border-top: 0;
+	background: #f5fafa url(./images/triangle2.gif) no-repeat;
+	font: bold 10px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	color: #6786C3;
+}
+
+#tablespec th.acenter {	
+	text-align: center;
+}
+
+#tablespec th.aright {	
+	text-align: right;
+}
+
+
+#tablespec td {
+	border-right: 1px solid #6786C3;
+	border-bottom: 1px solid #6786C3;
+	background: #fff;
+	padding: 2px 2px 2px 2px;
+	color: #6786C3;
+}
+
+#tablespec td.alt {
+	background: #F5FAFA;
+	color: #B4AA9D;
+}
+
+#tablespec .acenter {
+	text-align: center;
+}

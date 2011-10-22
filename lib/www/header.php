@@ -36,6 +36,18 @@ if(!isset($ajaxtitle)) {
 <title><?php echo $title?></title>
 <link rel="shortcut icon" href="../images/favicon.png" type="image/png" />
 <link rel="stylesheet" href="../style.css" type="text/css" />
+
+<?php
+	echo '<!-- code formatting -->';
+	echo '<script type="text/javascript" src="../addon/syntaxhighlighter/js/shCore.js"></script>';
+	echo '<script type="text/javascript" src="../addon/syntaxhighlighter/js/shBrushCpp.js"></script>';
+ 
+	echo '<!-- Include *at least* the core style and default theme -->';
+	echo '<link href="../addon/syntaxhighlighter/css/shCore.css" rel="stylesheet" type="text/css" />';
+	echo '<link href="../addon/syntaxhighlighter/css/shThemeDefault.css" rel="stylesheet" type="text/css" />';
+?>
+
+
 <?php
 if ( IS_JURY ) {
 	echo "<link rel=\"stylesheet\" href=\"style_jury.css\" type=\"text/css\" />\n";

@@ -13,10 +13,11 @@
 require('init.php');
 $title="sfide ...";
 // set auto refresh
-$refresh="30;url=./";
+//$refresh="30;url=./";
 $menu = false;
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/contest.cb.php');
+require(LIBWWWDIR . '/scoreboard.cb.php');
 setlocale(LC_ALL, 'it_IT');
 $isstatic = @$_SERVER['argv'][1] == 'static' || isset($_REQUEST['static']);
 
@@ -25,13 +26,25 @@ echo "<div id='main_container'>";
 $cid = getCurContest(TRUE);
 if($cid != NULL){
 	/* either presently open or the last closed one */
-	if(isContestClosed($cid)==0)
+	if(isContestClosed($cid)==0){
+		echo "<div class='pagetitle tcenter'>Benvenuto: questa &egrave; la sfida appena terminata</div>";
+		echo "<div class='clear'></div>";
+		echo "<h1>" . htmlspecialchars($cid['contestname']) . "</h1>";
 		putContestStats($cid, null, $isstatic);
-	else
+		echo "<div class='vspace50'></div>";
+		echo "<div class='clear'></div>";
+		putScoreBoardShort($cid, null, $isstatic);
+		echo "<div class='clear'></div>";
+		
+	} else {
+		echo "<div class='pagetitle tcenter'>Benvenuto: questa &egrave; la sfida aperta</div>";
+		echo "<div class='clear'></div>";
+		echo "<h1>" . htmlspecialchars($cid['contestname']) . "</h1>";
 		putContestFull($cid, null, $isstatic);
+	}
 } else {
 	/* TODO: show past contests and/or scoreboards */
-	echo "<h2 class='tcenter'>Benvenuto</h2>";
+	echo "<div class='pagetitle tcenter'>Benvenuto</div>";
 	echo "<div class='vspace50'></div>";
 	echo "<div class='clear'></div>";
 	$cid = getNextContest(TRUE);
