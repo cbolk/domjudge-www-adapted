@@ -1,4 +1,4 @@
-# Variation of the Domjudge Programming Contest Jury System ==
+# Variation of the Domjudge Programming Contest Jury System
 
 ## ORIGINAL SOFTWARE
 
@@ -16,9 +16,11 @@ http://lists.a-eskwadraat.nl/mailman/listinfo/domjudge-devel
 
 ## CONTRIBUTION
 
-This variation adds:
 - style modification
-- problem description
+- added problem description
 - displays the active problem description
-- information on team participation
+- added team name
+- added information on team participation
 - access to all submissions for a given problem
+- added public/hidden testcase
+- added input/output from/to file
