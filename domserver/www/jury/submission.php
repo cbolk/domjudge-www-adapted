@@ -130,7 +130,8 @@ if ( isset($_POST['claim']) || isset($_POST['unclaim']) ) {
 // Headers might already have been included.
 require_once(LIBWWWDIR . '/header.php');
 
-echo "<h1>Submission s".$id;
+echo "<h1><div class='left'><a href='" . $_SERVER['PHP_SELF'] . "?id=" . ($id-1) . "'><img src='../images/prev1.png' /></a></div> Submission s".$id;
+echo " <div class='right'><a href='" . $_SERVER['PHP_SELF'] . "?id=" . ($id+1) . "'><img src='../images/next1.png' /></a>";
 if ( $submdata['valid'] ) {
 	echo "</h1>\n\n";
 } else {
@@ -138,6 +139,8 @@ if ( $submdata['valid'] ) {
 	echo "<p>This submission is not used during the scoreboard
 		  calculations.</p>\n\n";
 }
+
+
 
 ?>
 <table width="100%">
