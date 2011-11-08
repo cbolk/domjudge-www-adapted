@@ -74,7 +74,7 @@ function genContestFull($cdata) {
 	$strSQL = "MAYBETUPLE SELECT probid, COUNT(*) as number FROM submission WHERE cid = " . $cid;
 	$subs = $DB->q($strSQL);
 									
-	$strSQL = "SELECT testcaseid, input, output, rank FROM testcase INNER JOIN problem ON testcase.probid = problem.probid
+	$strSQL = "SELECT testcaseid, input, output, ifile, ofile, rank FROM testcase INNER JOIN problem ON testcase.probid = problem.probid
 									WHERE public = 1 AND cid = " . $cid;
 	$tests = $DB->q($strSQL);
 	
@@ -145,6 +145,7 @@ function renderContestFull($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	$timeleft = (int)((strtotime($cdata['endtime']) - strtotime($now)) / 3600);
 	/* single problem per challenge */
 	$rowprob = $probs->next();
+	$probid = $rowprob['probid'];
 	$problemtitle = $rowprob['name'];
 	$problemdescription = $rowprob['longdescription'];
 
@@ -176,12 +177,13 @@ function renderContestFull($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	echo "<div class='clear top bottom'>";
 	echo "<h3 class='black'>Come sottomettere la soluzione:</h3>";
 	echo "<ol><li>Leggi <a href='#problemdescription'>il problema</a></li>";
-	echo "<ol><li>Prestate molta attenzione alle specifiche, effettuando solamente le stampe a video necessarie ";
+	echo "<ul><li>Prestate molta attenzione alle specifiche, effettuando solamente le stampe a video necessarie ";
 	echo "(il programma non interagisce con un utente umano e tutto ci&ograve; che viene visualizzato viene confrontato ";
-	echo "con il risultato atteso: attenetevi alle specifiche).</li>";
+	echo "con il risultato atteso: attenetevi alle specifiche).</li></ul>";
 	echo "<li>Scegli il linguaggio che preferisci tra quelli consentiti (attualmente solo il <a href='./language.php?id=c'>linguaggio C</a>)</li>";
 	echo "<li>Scrivi e collauda algoritmo e codice usando anche i <a href='#testcases'>casi di test</a> proposti (fai molta attenzione agli ingressi ed alle uscite e non introdurre stampe non richieste)</li>";
-	echo "<li>Invia il codice seguendo il <a href='../team/websubmit.php'>link</a> (&egrave; necessario essere utenti registrati ed autenticati)</li></ol>";
+	echo "<li>Invia il codice seguendo il <a href='../team/websubmit.php'>link</a> (&egrave; necessario essere utenti registrati ed autenticati)</li>";
+	echo "<li>Verifica il risultato della compilazione del tuo programma e l'esecuzione con i casi di test (quelli qua riportati oltre ad altri). Il significato del risultato &egrave; spiegato qui: <a href='./result.php'>link</a></li></ol>";
 	echo "</div>"; /* clear top bottom */
 	echo "<p class='clear'></p>";
 	echo "<div class='boxinthemiddle'>"; 
@@ -205,13 +207,28 @@ function renderContestFull($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	echo "<p>Sono disponibili alcuni casi di test per poter collaudare il proprio algoritmo e programma prima di sottometterlo.</p>";
 	echo "<p>Esegui il tuo programma utilizzando i dati in ingresso e verifica che l'uscita prodotta sia quella indicata.</p>";
 	echo "<table id='testcases'>"; 
-	echo "<thead><tr><th style='text-align: left;'>ingresso</th><th style='text-align: left;'>uscita attesa</th></tr></thead>"; 
+	echo "<thead><tr><th style='text-align: left;'>ingresso</th><th>&nbsp;</th><th style='text-align: left;'>uscita attesa</th></tr></thead>"; 
 	$i = 0;
 	while($row = $tests->next()){
 		if($i % 2)
-			echo "<tr class='testcase-odd'><td>" . $row['input'] . "</td><td>" . $row['output'] . "</td></tr>";
+			echo "<tr class='testcase-odd'>"; 
 		else
-			echo "<tr class='testcase-even'><td>" . $row['input'] . "</td><td>" . $row['output'] . "</td></tr>";		
+			echo "<tr class='testcase-even'>";
+		echo "<td class='vtop wmax50perc'>";
+		if($row['ifile'] == NULL || $row['ifile'] == "")
+			echo "<pre class='brush;'>" . htmlspecialchars($row['input']) . "</pre>";
+		else
+			echo "<pre><a href='../public/debug/p" . $probid . "/" . $row['ifile'] . "'>" . $row['ifile'] . "</a></pre>";
+		echo "</td><td></td><td class='vtop'>";
+		
+		if($row['ofile'] == NULL || $row['ofile'] == "")
+			echo "<pre class='brush;'>" . htmlspecialchars($row['output']) . "</pre>";
+		else
+			echo "<a href='./debug/p" . $row['probid'] . "/" . $row['ofile'] . "'>" . $row['ofile'] . "</a>"; 
+			
+
+		echo "</td></tr>";
+		$i = $i + 1;
 	}
 	echo "</table>"; 
 	echo "</div>"; /* description */
@@ -317,4 +334,22 @@ function getContextStartTime($cid)
 	$sdate = $DB->q($strSQL);
 	return $sdate;
 
+}
+
+function getContestFromProblem($probid)
+{
+	global $DB;
+	$strSQL = "VALUE SELECT cid
+				FROM problem
+				WHERE probid = " . $probid . ";";
+	$cid = $DB->q($strSQL);
+	return $cid;
+}
+
+function putProblemAsViewed($probid)
+{
+	global $DB;
+	$cid = getContestFromProblem($probid);
+	putContestFull($cid, NULL, TRUE);
+	return;
 }

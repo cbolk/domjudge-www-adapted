@@ -7,7 +7,8 @@
  *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
+ *
+ * Added by CBolk
  */
 if (!defined('DOMJUDGE_VERSION')) die("DOMJUDGE_VERSION not defined.");
 
@@ -36,13 +37,31 @@ if(!isset($ajaxtitle)) {
 <title><?php echo $title?></title>
 <link rel="shortcut icon" href="../images/favicon.png" type="image/png" />
 <link rel="stylesheet" href="../style.css" type="text/css" />
+<link rel="stylesheet" href="../style.subs.css" type="text/css" />
 
 <!-- code formatting -->
 <script type="text/javascript" src="../addon/syntaxhighlighter/js/shCore.js"></script>
 <script type="text/javascript" src="../addon/syntaxhighlighter/js/shBrushCpp.js"></script>
+ 
 <!-- Include *at least* the core style and default theme -->
 <link href="../addon/syntaxhighlighter/css/shCoreSmaller.css" rel="stylesheet" type="text/css" />
 <link href="../addon/syntaxhighlighter/css/shThemeDefault.css" rel="stylesheet" type="text/css" />
+
+<script src="../addon/jQuery/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+    function toggle_result(id) {
+      if($('#sub_detail_'+id).css("display") == "none") {
+        $('#sub_summary_'+id).addClass('open');
+        $('#sub_detail_'+id).fadeIn();
+      } else {
+        $('#sub_summary_'+id).removeClass('open');
+        $('#sub_detail_'+id).hide();
+      }
+    }
+
+//]]>
+</script>
 
 
 <?php

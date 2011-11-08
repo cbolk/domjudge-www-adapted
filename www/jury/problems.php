@@ -31,7 +31,8 @@ if( $res->count() == 0 ) {
 		"<th scope=\"col\">contest</th><th scope=\"col\">allow<br />submit</th>" .
 		"<th scope=\"col\">allow<br />judge</th>" .
 		"<th scope=\"col\">time<br />limit</th>" .
-		"<th class=\"sorttable_nosort\" scope=\"col\">colour</th>" .
+		"<th class=\"sorttable_nosort\" scope=\"col\">col</th>" .
+		"<th scope=\"col\">subs</th>" .
 	  "<th scope=\"col\">test<br />cases</th>" .
 	  "<th scope=\"col\">edit</th>" .
 	  "<th scope=\"col\">delete</th>" .
@@ -68,6 +69,7 @@ if( $res->count() == 0 ) {
 		      '" src="../images/circle.png" /></a>'
 			: '<td align="center" >' . $link . '&nbsp;</a>' );
 			if ( IS_ADMIN ) {
+				echo "</td><td align='center' ><a href='show_sources_problem.php?id=" . urlencode($row['probid']) . "'>list</a>";
 				echo "</td><td class='aright'><a href=\"testcase.php?probid=" . $row['probid'] .
 				    "\">" . $row['testcases'] . "</a></td class='acenter'>" .
 				    "<td class=\"editdel  acenter\">" .

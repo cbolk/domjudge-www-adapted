@@ -150,7 +150,10 @@ if ( $submdata['valid'] ) {
 <tr><td scope="row">Team:</td><td>
 	<a href="team.php?id=<?php echo urlencode($submdata['teamid'])?>">
 	<span class="teamid"><?php echo htmlspecialchars($submdata['teamid'])?></span>:
-	<?php echo htmlspecialchars($submdata['teamname'])?></a></td></tr>
+	<?php echo htmlspecialchars($submdata['teamname'])?></a>
+<!--	<br/>
+	<a href="team.php?id=<?php echo urlencode($submdata['teamid'])?>">send clarification</a> -->
+	</td></tr>
 <tr><td scope="row">Problem:</td><td>
 	<a href="problem.php?id=<?php echo $submdata['probid']?>">
 	<span class="probid"><?php echo htmlspecialchars($submdata['probid'])?></span>:

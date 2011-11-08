@@ -333,6 +333,7 @@ h1 {
 .dashed_line{border:1px dashed #CCC;margin:0 0 0 -3px}
 .imgmiddle img {vertical-align: middle; padding: 0px;}
 
+
 #toptitle{
 /*	width: 1000px; */
 	font-size: 22px;
@@ -389,7 +390,9 @@ h1 {
 .black{color: black;}
 .aleft{text-align: left;}
 .aright{text-align: right;}
-.acenter{text-align: center;}
+.acenter .tcenter{text-align: center;}
+.small {font-size: 0.7em;}
+.tred{color: red;}
 
 .content_box{padding:12px 12px 20px 12px;width:680px;margin: auto;}
 .challenges_wd{text-align: center;}
@@ -409,6 +412,9 @@ hr.points_line{display:block;}
 pre.brush{color:#eee;background:#333;padding:6px 12px;margin-bottom:15px}
 
 .boxinthemiddle{text-align: center;margin: auto;width: 320px;}
+
+.wmax50perc {max-width: 400px;}
+.vtop {vertical-align: top;}
 
 /* extra */
 input[type=button],input[type=submit]{cursor:pointer}
@@ -534,3 +540,5 @@ del
 #tablespec .acenter {
 	text-align: center;
 }
+
+#thistorystats {float: right;}

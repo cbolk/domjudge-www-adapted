@@ -16,12 +16,23 @@ require(LIBWWWDIR . '/header.php');
 
 echo "<h1>Teams & Problems</h1>\n\n";
 
+$strSQL = 'SELECT starttime FROM contest WHERE now() > starttime AND endtime > now() ORDER BY starttime DESC LIMIT 1;';
+$activetime = $DB->q($strSQL);
+$ats = $activetime->next();
+$at = $ats['starttime'];
 
-$strSQL = 'SELECT teamid, t.name, probid, submissions, is_correct FROM scoreboard_jury sbj INNER JOIN team t ON (sbj.teamid = t.login) ORDER BY teamid';
+if($activetime){
+	$strSQL = 'SELECT name FROM team WHERE teampage_first_visited > "' . $at . '" ORDER BY name;';
+	$checkedin = $DB->q($strSQL);
+}
+
+
+
+$strSQL = 'SELECT teamid, t.name, probid, submissions, is_correct FROM scoreboard_jury sbj INNER JOIN team t ON (sbj.teamid = t.login) ORDER BY t.name;';
 
 $res = $DB->q($strSQL);
 
-$strSQL = 'SELECT DISTINCT sbj.probid, name FROM scoreboard_jury sbj INNER JOIN problem ON sbj.probid = problem.probid ORDER BY probid';
+$strSQL = 'SELECT DISTINCT sbj.probid, name FROM scoreboard_jury sbj INNER JOIN problem ON sbj.probid = problem.probid INNER JOIN contest c on problem.cid = c.cid ORDER BY c.starttime';
 
 $probs = $DB->q($strSQL);
 $nprob = $probs->count();
@@ -54,7 +65,8 @@ if( $res->count() == 0 ) {
 	while($row = $res->next()){
 		$MATRIX[$row['teamid']][$row['probid']] =  array (
 			'res'      => (bool) $row['is_correct'],
-			'numsub' => $row['submissions']
+			'numsub' => $row['submissions'],
+			'checkedin' => 0
 		);
 		if($row['teamid'] != $lastteam){
 			$TEAMS[$nteam]['id'] = $row['teamid'];
@@ -65,7 +77,7 @@ if( $res->count() == 0 ) {
 	}
 	$i = 0;
 	while ($i < $nteam) {
-		$strteam = "<th scope='row' class='aright'>" . $i . "</th><td>" . $TEAMS[$i]['name'] . "</td>" ;
+		$strteam = "<th scope='row' class='aright'>" . ($i+1) . "</th><td>" . $TEAMS[$i]['name'] . "</td>" ;
 		$j  = 0;
 		while($j < $np){
 			if(isset($MATRIX[$TEAMS[$i]['id']][$PROBS[$j]])){

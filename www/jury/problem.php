@@ -158,6 +158,7 @@ $data = $DB->q('TUPLE SELECT p.*, c.contestname, count(rank) AS ntestcases
 
 if ( ! $data ) error("Missing or invalid problem id");
 
+echo "<div class='right'><a href='./problem_detail.php?id=$id'>show formatted</a></div>";
 echo "<h1>Problem ".htmlspecialchars($id)."</h1>\n\n";
 
 echo addForm($pagename, 'post', null, 'multipart/form-data') . "<p>\n" .

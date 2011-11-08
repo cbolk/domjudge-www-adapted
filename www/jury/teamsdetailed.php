@@ -30,15 +30,15 @@ $ncorrect = $DB->q('KEYTABLE SELECT teamid AS ARRAYKEY, COUNT(teamid) AS cnt
 
 require(LIBWWWDIR . '/header.php');
 
-echo "<h1>List of teams (<a href='teamsdetailed.php'>details</a>)</h1>\n\n";
+echo "<h1>List of teams</h1>\n\n";
 
 if( $teams->count() == 0 ) {
 	echo "<p class=\"nodata\">No teams defined</p>\n\n";
 } else {
 	echo "<table class=\"list sortable\" border='1'>\n" .
 		"<tr><th class='theader' scope=\"col\">login</th><th class='theader' scope=\"col\">name</th>" .
-		"<th class='theader' scope=\"col\">category</th><th class='theader' scope=\"col\">affiliation</th>" .
 		"<th class='theader' scope=\"col\">host</th>" .
+		"<th class='theader' scope=\"col\">time</th>" .
 		"<th class=\"sorttable_nosort theader\"></th><th class='theader' align=\"left\" " .
 		"scope=\"col\">status</th>" .
 	  "<th class='theader' scope=\"col\">edit</th>" .
@@ -67,35 +67,32 @@ if( $teams->count() == 0 ) {
 			"<td class=\"teamid\">" . $link .
 				htmlspecialchars($row['login'])."</a></td>".
 			"<td>" . $link .
-				htmlspecialchars($row['name'])."</a></td>".
-			"<td>" . $link .
-				htmlspecialchars($row['catname'])."</a></td>";
-			echo '<td title="' .htmlspecialchars($row['affname']). '">' . $link;
-			if ( is_readable($affillogo) ) {
-				echo '<img src="' . $affillogo . '" alt="' .
-					htmlspecialchars($row['affilid']) . '" /> ';
-			} else {
-				echo htmlspecialchars($row['affname']);
-			}
-			echo '</a></td>';
+				htmlspecialchars($row['name'])."</a></td>";
 			echo "<td title=\"";
 
 		if ( @$row['hostname'] ) {
 			echo htmlspecialchars($row['hostname']) . "\">" . $link .
 			    printhost($row['hostname']);
 		} else {
-			echo "\">" . $link . "-";
+			echo "\">" . $link . "";
+		}
+		echo "</a></td><td title=\"";
+		if ( @$row['teampage_first_visited'] ) {
+			echo htmlspecialchars($row['teampage_first_visited']) . "\">" . $link .
+			    printhost($row['teampage_first_visited']);
+		} else {
+			echo "\">" . $link . "";
 		}
 		echo "</a></td>";
 		echo "<td class=\"";
 		switch ( $status ) {
-		case 0: echo 'team-nocon acenter" title="no connections made"><img class="smallpic" src="../images/team-neverlogged.png" />';
+		case 0: echo 'acenter vmiddle" title="no connections made"><img class="smallpic vmiddle" src="../images/team-neverlogged.png" />';
 			break;
-		case 1: echo 'team-nosub acenter" title="teampage viewed, no submissions"><img class="smallpic" src="../images/team-nosub.png" />';
+		case 1: echo 'acenter vmiddle" title="teampage viewed, no submissions"><img class="smallpic vmiddle" src="../images/team-nosub.png" />';
 			break;
-		case 2: echo 'team-nocor acenter" title="submitted, none correct"><img class="smallpic" src="../images/team-nook.png" />';
+		case 2: echo 'acenter vmiddle" title="submitted, none correct"><img class="smallpic vmiddle" src="../images/team-nook.png" />';
 			break;
-		case 3: echo 'team-ok acenter" title="correct submission(s)"><img class="smallpic" src="../images/team-ok.png" />';
+		case 3: echo 'acenter vmiddle" title="correct submission(s)"><img class="smallpic vmiddle" src="../images/team-ok.png" />';
 			break;
 		}
 		// TODO? want to link this symbol aswell? need to do some css magic to retain color

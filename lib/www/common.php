@@ -168,7 +168,12 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 			}
 		}
 		echo "</td>";
-		echo "<td><img src='../images/" . $row['result'] .".png' style='vertical-align:text-bottom;' /></td>";
+		if($row['result'] == NULL)
+			$imgresult = "judging.gif";	
+		else
+			$imgresult = $row['result'] .".png";
+			
+		echo "<td><img src='../images/" . $imgresult . "' style='vertical-align:text-bottom;' /></td>";
 
 		if ( IS_JURY ) {
 			echo "<td><a$link>";

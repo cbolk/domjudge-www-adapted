@@ -26,6 +26,7 @@ if ( isset($_GET['cmd'] ) ) {
 
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/forms.php');
+require(LIBWWWDIR . '/team.cb.php');
 
 if ( IS_ADMIN && !empty($cmd) ):
 
@@ -107,6 +108,8 @@ $teamimage   = "../images/teams/"        . urlencode($row['login'])   . ".jpg";
 
 echo "<h1>Team ".htmlspecialchars($row['name'])."</h1>\n\n";
 
+putTeamSubmissionHistoryStats($id);
+
 if ( is_readable($teamimage) ) {
 	echo '<img id="teampicture" src="' . $teamimage .
 		'" alt="Picture of team ' . htmlspecialchars($row['name']) . '" />';
@@ -122,9 +125,6 @@ if ( is_readable($teamimage) ) {
 <?php if (!empty($row['room'])): ?>
 <tr><td scope="row">Room:</td><td><?php echo htmlspecialchars($row['room'])?></td></tr>
 <?php endif; ?>
-</table></div>
-
-<div class="col2"><table>
 <?php
 
 echo '<tr><td scope="row">Category:</td><td><a href="team_category.php?id=' .
