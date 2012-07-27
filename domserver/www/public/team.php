@@ -2,8 +2,6 @@
 /**
  * View team details
  *
- * $Id: team.php 2539 2008-12-01 19:46:36Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
