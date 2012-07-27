@@ -2,11 +2,13 @@
 /**
  * Output scoreboard in XML format.
  *
- * $Id: scoreboard.php 2964 2009-11-21 23:08:33Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
+
+// Frozen scoreboard requested, even if after unfreeze time. Make sure
+// we access the database as non-jury, before defining IS_JURY in init.
+if ( isset($_REQUEST['frozen']) ) define('IS_JURY', FALSE);
 
 require('init.php');
 
@@ -17,15 +19,16 @@ $now = now();
 $cstarted = difftime($now, $cdata['starttime'])>0;
 $cended   = difftime($now, $cdata['endtime'])  >0;
 
-function infreeze($time) {
-	if ( ( ! empty($cdata['freezetime']) &&
-		   difftime($time, $cdata['freezetime'])>0 ) &&
-		!( ! empty($cdata['unfreezetime']) &&
-		   difftime($time, $cdata['unfreezetime'])<=0 ) ) return TRUE;
-	return FALSE;
+// Frozen scoreboard requested:
+if ( isset($_REQUEST['frozen']) ) unset($cdata['unfreezetime']);
+
+// parse filter options
+$filter = array();
+foreach( array('affilid', 'country', 'categoryid') as $type ) {
+	if ( !empty($_GET[$type]) ) $filter[$type] = $_GET[$type];
 }
 
-$tmp = @genScoreBoard($cdata);
+$tmp = @genScoreBoard($cdata, FALSE, $filter);
 if ( ! empty($tmp) ) {
 	$MATRIX  = $tmp['matrix'];
 	$SCORES  = $tmp['scores'];

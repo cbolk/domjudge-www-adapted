@@ -2,8 +2,6 @@
 /**
  * Output events in XML format.
  *
- * $Id: event.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
