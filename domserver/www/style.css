@@ -542,3 +542,178 @@ del
 }
 
 #thistorystats {float: right;}
+
+/* additional formatting */
+.clean {clear:both;}
+.fright{float: right;}
+.fleft{float: left;}
+
+h1.userbox{
+	text-align: left;
+}
+
+dd input[type="text"]{
+    -moz-box-sizing: border-box;
+    margin-right: 5px;
+    width: 400px;
+    padding: 6px;
+    font-size: 14px;
+    color: rgb(102, 102, 102);
+}
+
+table.userbox {
+	padding: 2px;
+	font-size: 15px;
+}
+
+/* user stats */
+.last{
+	float: right;
+	width: 450px;
+}
+.statsbox {
+	width: 100%;
+	display: block;
+	float: left;
+	line-height: 35px;
+	margin-top: 5px;
+	margin-bottom: 15px;
+}
+
+ul.stats {
+    margin:  0px;
+}
+
+ul.stats li {
+    list-style-type: none;
+    float: left;
+    margin-right: 30px;
+    min-width: 60px;
+}
+
+ul.stats li strong {
+	margin: 0px;
+	padding: 0px;
+	
+    display: block;
+    font-size: 36px;
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+}
+
+ul.stats li span {
+	margin: 0px;
+	padding: 0px;
+    display: block;
+    margin-top: -10px;
+    font-size: 13px;
+    color: rgb(153, 153, 153);
+}
+
+.boxed-group > h3, .boxed-group .heading {
+    background: -moz-linear-gradient(rgb(250, 250, 250), rgb(224, 224, 224)) repeat scroll 0% 0% transparent;
+    margin: 0px;
+    border-top-left-radius: 1px;
+    border-top-right-radius: 1px;
+    border-width: 1px 1px medium;
+    border-style: solid solid none;
+    border-color: rgb(216, 216, 216) rgb(216, 216, 216) -moz-use-text-color;
+    -moz-border-top-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    border-image: none;
+    padding: 10px 10px 11px;
+    font-size: 14px;
+    text-shadow: 0px 1px 0px rgb(255, 255, 255);
+}
+
+input.classy, input.classy:disabled, input.classy.disabled, a.button.classy:disabled, a.button.classy.disabled, input.classy:disabled:hover, input.classy.disabled:disabled:hover, a.button.classy.disabled:hover:disabled, a.button.classy.disabled:hover, a.button.classy, input.classy:disabled:hover, input.classy.disabled:disabled:hover, a.button.classy:disabled:hover, a.button.classy.disabled:disabled:hover, a.button.classy.disabled:hover {
+    display: inline-block;
+    padding: 8px 15px;
+    line-height: normal;
+    position: relative;
+    font-family: Helvetica,arial,freesans,clean,sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: rgb(102, 102, 102);
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.9);
+    background: -moz-linear-gradient(rgb(245, 245, 245), rgb(229, 229, 229)) repeat scroll 0% 0% transparent;
+    border-radius: 3px 3px 3px 3px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgb(221, 221, 221) rgb(221, 221, 221) rgb(187, 187, 187);
+    -moz-border-top-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    border-image: none;
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    -moz-user-select: none;
+}
+.minibutton {
+    position: relative;
+    display: inline-block;
+    padding: 0px 10px;
+    color: rgb(51, 51, 51);
+    font-family: Helvetica,arial,freesans,clean,sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 24px;
+    text-shadow: 0px 1px 0px rgb(255, 255, 255);
+    white-space: nowrap;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgb(212, 212, 212) rgb(212, 212, 212) rgb(188, 188, 188);
+    -moz-border-top-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    border-image: none;
+    border-radius: 3px 3px 3px 3px;
+    background: -moz-linear-gradient(rgb(250, 250, 250), rgb(234, 234, 234)) repeat scroll 0% 0% transparent;
+    cursor: pointer;
+    -moz-user-select: none;
+}
+
+a.minibutton{
+	text-decoration: none;
+}
+
+.minibutton:hover {
+	color:#fff;
+	text-decoration:none;
+	text-shadow:0 -1px 0 rgba(0,0,0,0.3);
+	border-color:#518cc6;
+	border-bottom-color:#2a65a0;
+	background:#599bdc;
+	background:-moz-linear-gradient(#599bdc,#3072b3);
+	background:-webkit-linear-gradient(#599bdc,#3072b3);
+	-ms-filter:"progid:DXImageTransform.Microsoft.gradient(startColorstr='#599bdc',endColorstr='#3072b3')";
+	}
+
+.minibutton i{font-weight:500;font-style:normal;opacity:.6;}
+
+
+@font-face {
+	font-family: 'IcoMoon';
+	src: url('fonts/IcoMoon.eot');
+	src: url('fonts/IcoMoon.eot?#iefix') format('embedded-opentype'),
+		url('fonts/IcoMoon.svg#IcoMoon') format('svg'),
+		url('fonts/IcoMoon.woff') format('woff'),
+		url('fonts/IcoMoon.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+/* Use the following CSS code if you want to use data attributes for inserting your icons */
+[iconmoon]:after {
+	font-family: 'IcoMoon';
+	content: attr(iconmoon);
+	speak: none;
+	font-size: 16px;
+	font-weight: normal;
+	color: #000;
+	margin-left: 5px;
+}

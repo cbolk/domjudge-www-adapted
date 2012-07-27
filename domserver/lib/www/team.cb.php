@@ -87,3 +87,70 @@ function putTeamSubmissionHistoryStats($teamid) {
 	renderTeamSubmissionHistoryStats($teamid,$tdata);
 	
 }
+
+/**
+ * Team summary stats: number of contests, number of problems and number of 
+ * correct solutions
+ */
+function getTeamStats($teamid){
+	global $DB;
+	$strSQL = "SELECT scoreboard_jury.cid, probid, submissions AS number, is_correct AS isOK
+				FROM scoreboard_jury INNER JOIN contest ON scoreboard_jury.cid = contest.cid
+				WHERE teamid = '" . $teamid . "'   
+				ORDER BY starttime;";
+				/*   '" . $teamid . "' */
+	$submissions = $DB->q($strSQL);
+	return $submissions;
+}
+
+function renderTeamStats($teamid,$tdata){
+	
+	$subs   = $tdata;
+	$ncontests = 0;
+	$nproblems = 0;
+	$nsubs = 0;
+	$nok = 0;
+	$cid = -1;
+	$pid = -1;
+	while($v = $subs->next()){
+		
+		if($v['cid'] != $cid){
+			$ncontests++;
+			$nproblems++;
+			$pid = $v['probid'];
+		} else 
+				if($v['probid'] != $pid){
+					$nproblems++;
+					$pid = $v['probid'];
+		}
+				
+		$nsubs =  $nsubs + $v['number'];
+		$nok = $nok + $v['isOK'];
+	}
+	
+	echo "\n<div class='statsbox'>\n&nbsp;";
+    echo "  <ul class='stats'>\n";
+    echo "    <li>\n";
+    echo "      <strong>" . $ncontests . "</strong>\n";
+    echo "      <span>contests</span></li>\n";
+    echo "    <li>\n";
+    echo "      <strong>" . $nproblems . "</strong>\n";
+    echo "      <span>problems</span></li>\n";
+    echo "    <li>\n";
+    echo "      <strong>" . $nsubs . "</strong>\n";
+    echo "      <span>submissions</span></li>\n";
+    echo "    <li>\n";
+    echo "      <strong>" . $nok . "</strong>\n";
+    echo "      <span>correct</span></li>\n";
+    echo " </ul>\n";
+	echo "</div>\n";
+	
+}
+
+/**
+  * outputting information 
+ */
+function putTeamStats($teamid) {
+	$tdata = getTeamStats($teamid);
+	renderTeamStats($teamid,$tdata);
+}

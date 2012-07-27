@@ -11,6 +11,7 @@
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  * Modified by CBolk
+ * UPDATE July 26, 2012 - support for Unique Authentication via shib
  */
 
 $ip = $_SERVER['REMOTE_ADDR'];
@@ -107,17 +108,8 @@ function show_loginpage()
 (IP <?php echo htmlspecialchars($ip); ?>).</p>
 
 <p>
-Please supply team credentials below, or contact a staff member for assistance.
+Please contact a staff member for assistance.
 </p>
-
-<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post">
-<input type="hidden" name="cmd" value="login" />
-<table>
-<tr><td><label for="login">Login:</label></td><td><input type="text" id="login" name="login" value="" size="15" maxlength="15" accesskey="l" /></td></tr>
-<tr><td><label for="passwd">Password:</label></td><td><input type="password" id="passwd" name="passwd" value="" size="15" maxlength="255" accesskey="p" /></td></tr>
-<tr><td colspan="2" align="center"><input type="submit" value="Login" /></td></tr>
-</table>
-</form>
 
 <?php
 		putDOMjudgeVersion();
@@ -330,17 +322,16 @@ function do_changename()
 	global $DB, $login;
 
 	$user = trim($_POST['login']);
-	$pass = trim($_POST['passwd']);
 	$name = trim($_POST['name']);
 
 	$title = 'Updating user name';
 	$menu = false;
 
-	if (empty($user) || empty($pass) || empty($name)) {
-		show_failed_nameupdate("Please supply login, password and new name", $user);
+	if (empty($user) || empty($name)) {
+		show_failed_nameupdate("Please supply login and new name", $user);
 	}
 	
-	$sqlq = "RETURNAFFECTED UPDATE team set name = '" . $name . "' WHERE login = '". $user . "' AND authtoken = '" . md5($user."#".$pass) ."'";
+	$sqlq = "RETURNAFFECTED UPDATE team set name = '" . $name . "' WHERE login = '". $user . "'";
 	$cnt = $DB->q($sqlq);
 	if($cnt != 1){
 		show_failed_nameupdate("Impossible to change your name. " .
@@ -370,3 +361,104 @@ function show_failed_nameupdate($msg, $user)
 	echo "<h2>Name not modified</h2>\n\n<p>$msg</p>\n\n";
 	exit;
 }
+
+//Get the user id from the shibbolet authentication token
+// Try to login a team with e.g. authentication data POST-ed. Function
+// does not return and should generate e.g. a redirect back to the
+// referring page.
+function do_auth()
+{
+	global $DB, $ip, $login, $teamdata;
+
+	switch ( AUTH_METHOD ) {
+	// Generic authentication code for IPADDRESS and PHP_SESSIONS;
+	// some specializations are handled by if-statements.
+	case 'PHP_SESSIONS':
+		$user = extract_user($_SERVER['REMOTE_USER']);
+		
+		$title = 'Authenticate user';
+		$menu = false;
+
+		if ( empty($user) ) {
+			show_failed_login("No user has been specified");
+		}
+
+		$teamdata = $DB->q('MAYBETUPLE SELECT * FROM team
+		                    WHERE login = %s', $user);
+
+		if ( !$teamdata ) {
+			sleep(3);
+			show_failed_login("This user has no access to this application " .
+			                  "Please contact a staff member.");
+		}
+
+		$login = $teamdata['login'];
+
+		session_start();
+		$_SESSION['teamid'] = $login;
+
+		$sqlq = "RETURNAFFECTED UPDATE team set hostname = '" . $ip . "' WHERE login = '". $user . "'";
+		$cnt = $DB->q($sqlq);
+		if($cnt != 1)
+			show_failed_nameupdate("Impossible to update the hostname you are connecting from");				
+		
+		break;
+
+	default:
+		error("Unknown authentication method '" . AUTH_METHOD .
+		      "' requested, or login not supported.");
+	}
+
+	require(LIBWWWDIR . '/header.php');
+	echo "<h1>Authenticated</h1>\n\n<p>Successfully authenticated as team " .
+	    htmlspecialchars($teamdata['name']) . " on " . htmlspecialchars($ip) . ".</p>\n" .
+	    "<p><a href=\"$_SERVER[PHP_SELF]\">Continue to your team page</a>, " .
+	    "and good luck!</p>\n\n";
+	require(LIBWWWDIR . '/footer.php');
+
+	exit;
+}
+
+// This function presents some kind of message to redirect to the
+// Authentication page
+function show_authpage()
+{
+	global $ip;
+
+	switch ( AUTH_METHOD ) {
+	case 'PHP_SESSIONS':
+		if ( NONINTERACTIVE ) error("Not authenticated");
+		$title = 'Not Authenticated';
+		$menu = false;
+
+		include(LIBWWWDIR . '/header.php');
+		?>
+<h1>Not Authenticated</h1>
+
+<p>Sorry, we are unable to identify you as a valid user
+(IP <?php echo htmlspecialchars($ip); ?>).</p>
+
+<p>
+Please contact a staff member for assistance.
+</p>
+
+<?php
+		putDOMjudgeVersion();
+		include(LIBWWWDIR . '/footer.php');
+		break;
+
+	default:
+		error("Unknown authentication method '" . AUTH_METHOD .
+		      "' requested, or login not supported.");
+	}
+
+	exit;
+}
+
+function extract_user($value){
+	
+	$isep = strpos($value, '@');
+	$codp = substr($value, 0, $isep);
+	return $codp;
+}
+

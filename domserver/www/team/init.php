@@ -33,9 +33,9 @@ require_once(LIBWWWDIR . '/scoreboard.php');
 require_once(LIBWWWDIR . '/auth.team.php');
 
 // The functions do_login and show_loginpage, if called, do not return.
-if ( @$_POST['cmd']=='login' ) do_login();
+if ( !logged_in() ) do_auth();
 
-if ( !logged_in() ) show_loginpage();
+if ( !logged_in() ) show_authpage();
 
 $cdata = getCurContest(TRUE);
 $cid = $cdata['cid'];

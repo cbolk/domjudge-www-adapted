@@ -11,7 +11,7 @@ $refresh = '30;url=index.php';
 $title = 'Submissions';
 require(LIBWWWDIR . '/header.php');
 
-echo "<h1>Team ".htmlspecialchars($teamdata['name'])."</h1>";
+echo "<h1>".htmlspecialchars($teamdata['name'])."</h1>";
 
 // Put overview of team submissions (like scoreboard)
 echo "<div id=\"teamscoresummary\">\n";
