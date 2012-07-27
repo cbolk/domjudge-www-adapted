@@ -31,10 +31,13 @@ if ( is_readable($languageicon) ) {
 } else 
 	echo "<h1>Language ".htmlspecialchars($data['name'])."</h1>";
 ?>
+<center>
 <table width="800">
 <tr><td class="theader aleft" scope="row">Extension:   </td><td class="filename aleft">.<?php echo htmlspecialchars($data['extension'])?></td></tr>
 <tr><td class="theader aleft" scope="row">Time factor:  </td><td class="aleft"><?php echo htmlspecialchars($data['time_factor'])?> x</td></tr>
 <tr><td class="theader aleft vtop" scope="row">Usage:  </td><td class="aleft"><?php echo $data['usageinformation'] ?> </td></tr>
+<tr><td colspan="2">&lt; <a href='index.php'>back</a></td></tr>
+</center>
 </table>
 
 <?php
