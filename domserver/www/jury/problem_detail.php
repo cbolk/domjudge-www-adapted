@@ -1,6 +1,6 @@
 <?php
 /**
- * $Id: index.php 3118 2010-02-22 20:23:55Z kink $
+ * Show problems details
  *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.

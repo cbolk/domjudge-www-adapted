@@ -2,13 +2,11 @@
 /**
  * View the languages
  *
- * $Id: languages.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
+ *
  * Modified by CBolk
  */
-
 require('init.php');
 $title = 'Languages';
 
@@ -24,10 +22,10 @@ if( $res->count() == 0 ) {
 	echo "<table class=\"list sortable\">\n<thead>\n" .
 		"<tr><th scope=\"col\">ID</th><th scope=\"col\">name</th>" .
 		"<th scope=\"col\">extension</th>" .
-		"<th scope=\"col\">icon</th>" .
-		"<th scope=\"col\">allow<br />submit</th>" .
-		"<th scope=\"col\">allow<br />judge</th><th scope=\"col\">timefactor</th>" .
-		"<th>edit</th>" .
+		"<th scope=\"col\">&nbsp;icon&nbsp;</th>" .
+		"<th scope=\"col\">allow<br />submit&nbsp;</th>" .
+		"<th scope=\"col\">allow<br />judge</th>&nbsp;<th scope=\"col\">&nbsp;timefactor&nbsp;</th>" .
+		"<th>&nbsp;edit&nbsp;</th>" .
 		"<th>delete</th>" .
 		"</tr>\n<tbody>\n";
 
@@ -38,7 +36,7 @@ if( $res->count() == 0 ) {
 			"><td>" . $link . htmlspecialchars($row['langid'])."</a>".
 			"</td><td>" . $link . htmlspecialchars($row['name'])."</a>".
 			"</td>" .
-			"<td class=\"filename\">" . $link . "." .
+			"<td class=\"filename\">" . $link . "." . 
 				htmlspecialchars($row['extension']) . "</a>" .
 			"</td>"
 			.

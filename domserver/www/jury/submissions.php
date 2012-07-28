@@ -2,13 +2,11 @@
 /**
  * View the submissionqueue
  *
- * $Id: submissions.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
 
-$viewtypes = array(0 => 'newest', 1 => 'unverified', 2 => 'all');
+$viewtypes = array(0 => 'newest', 1 => 'unverified', 2 => 'unjudged', 3 => 'all');
 
 $view = 0;
 
@@ -30,13 +28,9 @@ $refresh = '15;url=submissions.php?' .
 $title = 'Submissions';
 
 // Set cookie of submission view type, expiry defaults to end of session.
-if ( version_compare(PHP_VERSION, '5.2') >= 0 ) {
-	// HTTPOnly Cookie, while this cookie is not security critical
-	// it's a good habit to get into.
-	setcookie('domjudge_submissionview', $view, null, null, null, null, true);
-} else {
-	setcookie('domjudge_submissionview', $view);
-}
+setcookie('domjudge_submissionview', $view);
+
+$jury_member = getJuryMember();
 
 require(LIBWWWDIR . '/header.php');
 
@@ -44,10 +38,9 @@ echo "<h1>$title</h1>\n\n";
 
 $restrictions = array();
 if ( $viewtypes[$view] == 'unverified' ) $restrictions['verified'] = 0;
+if ( $viewtypes[$view] == 'unjudged' ) $restrictions['judged'] = 0;
 
-require_once(LIBWWWDIR . '/forms.php');
-
-echo addForm('submissions.php', 'get') . "<p>\n";
+echo addForm('submissions.php', 'get') . "<p>Show submissions:\n";
 for($i=0; $i<count($viewtypes); ++$i) {
 	echo addSubmit($viewtypes[$i], 'view['.$i.']', null, ($view != $i));
 }

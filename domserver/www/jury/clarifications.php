@@ -2,8 +2,6 @@
 /**
  * Clarifications overview
  *
- * $Id: clarifications.php 3149 2010-02-27 12:32:04Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -11,6 +9,8 @@
 require('init.php');
 $ajaxtitle = 'Clarification Requests';
 $title = $ajaxtitle.($nunread_clars ? ' ('.$nunread_clars.' new)' : '');
+
+$jury_member = getJuryMember();
 
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/clarification.php');

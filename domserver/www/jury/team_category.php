@@ -2,8 +2,6 @@
 /**
  * View a row in a team_category
  *
- * $Id: team_category.php 3164 2010-04-18 20:24:09Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -11,12 +9,11 @@
 $id = (int)@$_GET['id'];
 
 require('init.php');
+require(LIBWWWDIR . '/scoreboard.php');
 
 $cmd = @$_GET['cmd'];
 
 if ( IS_ADMIN && ($cmd == 'add' || $cmd == 'edit') ) {
-
-	require(LIBWWWDIR . '/forms.php');
 
 	$title = "Category: " . htmlspecialchars($cmd);
 	$jscolor = true;
@@ -117,6 +114,10 @@ if ( $teams->count() == 0 ) {
 		$link . htmlspecialchars($team['name']) . "</a></td></tr>\n";
 	}
 	echo "</tbody>\n</table>\n\n";
+
+	echo "<p>";
+	putTeamRow($cdata,$listteams);
+	echo "</p>\n\n";
 }
 
 require(LIBWWWDIR . '/footer.php');

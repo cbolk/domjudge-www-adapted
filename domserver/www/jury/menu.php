@@ -1,3 +1,8 @@
+<!--
+  Modified by CBolk
+-->
+
+
 <div id="header">
 <div id="menutop">
 <ul class="nav">
@@ -19,7 +24,20 @@
 </ul>
 </div>
 
-<?php putClock(); ?>
+<?php 
+
+putClock(); 
+$refresh_flag = !isset($_COOKIE["domjudge_refresh"]) || (bool)$_COOKIE["domjudge_refresh"];
+
+if ( isset($refresh) ) {
+	echo "<div id=\"refresh\">\n" .
+	    addForm('toggle_refresh.php', 'get') .
+	    addHidden('enable', ($refresh_flag ? 0 : 1)) .
+	    addSubmit(($refresh_flag ? 'Dis' : 'En' ) . 'able refresh', 'submit') .
+	    addEndForm() . "</div>\n";
+}
+
+?>
 </div>
 
 <?php

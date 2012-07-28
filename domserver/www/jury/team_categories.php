@@ -2,8 +2,6 @@
 /**
  * View the categories
  *
- * $Id: team_categories.php 3149 2010-02-27 12:32:04Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */

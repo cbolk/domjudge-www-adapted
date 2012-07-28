@@ -1,7 +1,5 @@
 <?php
 /**
- * $Id: index.php 3170 2010-05-19 18:18:00Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -40,14 +38,13 @@ if ( is_readable('../images/DOMjudgelogo.png') ) {
 <h3>Administrator:</h3>
 
 <ul>
+<li><a href="config.php">Configuration settings</a></li>
 <li><a href="checkconfig.php">Config checker</a></li>
 <li><a href="genpasswds.php">Manage team passwords</a></li>
 <li><a href="refresh_cache.php">Refresh scoreboard cache</a></li>
+<li><a href="check_judgings.php">Judging verifier</a></li>
+<li><a href="auditlog.php">Activity log</a></li>
 </ul>
-
-<p><em>Note: the config check and cache refresh operations have a
-significant impact on the database load and can take some time to
-complete.</em></p>
 
 <?php endif; ?>
 

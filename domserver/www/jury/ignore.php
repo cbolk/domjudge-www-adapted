@@ -2,8 +2,6 @@
 /**
  * Change the valid status of a given submission.
  *
- * $Id: ignore.php 3118 2010-02-22 20:23:55Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -23,6 +21,8 @@ if ( empty($id) ) {
 $cnt = $DB->q('RETURNAFFECTED UPDATE submission s
                SET s.valid = %i WHERE s.submitid = %i',
               $val, $id);
+
+auditlog('submission', $id, 'marked ' . ($val?'valid':'invalid'));
 
 if ( $cnt == 0 ) {
 	error("Submission s$id not found.");

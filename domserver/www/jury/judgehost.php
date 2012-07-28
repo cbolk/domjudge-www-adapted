@@ -2,8 +2,6 @@
 /**
  * View judgehost details
  *
- * $Id: judgehost.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -21,6 +19,7 @@ if ( IS_ADMIN && isset($_POST['cmd']) &&
 	( $_POST['cmd'] == 'activate' || $_POST['cmd'] == 'deactivate' ) ) {
 	$DB->q('UPDATE judgehost SET active = %i WHERE hostname = %s',
 	       ($_POST['cmd'] == 'activate' ? 1 : 0), $id);
+	auditlog('judgehost', $id, 'marked ' . ($_POST['cmd']=='activate'?'active':'inactive'));
 }
 
 $row = $DB->q('TUPLE SELECT * FROM judgehost WHERE hostname = %s', $id);
@@ -57,8 +56,6 @@ if ( empty($row['polltime']) ) {
 
 <?php
 if ( IS_ADMIN ) {
-	require_once(LIBWWWDIR . '/forms.php');
-
 	$cmd = ($row['active'] == 1 ? 'deactivate' : 'activate');
 
 	echo addForm('judgehost.php') . "<p>\n" .
@@ -89,17 +86,28 @@ if( $res->count() == 0 ) {
 } else {
 	echo "<table class=\"list sortable\">\n<thead>\n" .
 	     "<tr><th scope=\"col\">ID</th><th scope=\"col\">start</th>" .
-		 "<th scope=\"col\">end</th><th scope=\"col\">result</th>" .
+		 "<th scope=\"col\">end</th><th scope=\"col\">runtime</th><th scope=\"col\">result</th>" .
 		 "<th scope=\"col\">valid</th><th scope=\"col\">verified</th>" .
 	     "</tr>\n</thead>\n<tbody>\n";
 
 	while( $jud = $res->next() ) {
+		$start = strtotime($jud['starttime']);
+		if ( empty($jud['endtime']) ) {
+			if ( $jud['valid'] ) {
+				$runtime = printtimediff($start, NULL);
+			} else {
+				$runtime = '[aborted]';
+			}
+		} else {
+			$runtime = printtimediff($start, strtotime($jud['endtime']));
+		}
 		$link = 'submission.php?id=' . (int)$jud['submitid'] .
 			'&amp;jid=' . (int)$jud['judgingid'];
 		echo '<tr' . ( $jud['valid'] ? '' : ' class="disabled"' ) . '>';
 		echo '<td><a href="' . $link . '">j' . (int)$jud['judgingid'] .
 			'</a></td>';
 		echo '<td>' . printtime($jud['starttime']) . '</td>';
+		echo '<td><a href="' . $link . '">' . $runtime . '</a></td>';
 		echo '<td>' . printtime(@$jud['endtime'])  . '</td>';
 		echo '<td><a href="' . $link . '">' .
 			printresult(@$jud['result'], $jud['valid']) . '</a></td>';

@@ -2,8 +2,6 @@
 /**
  * View team details
  *
- * $Id: team.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -13,20 +11,19 @@ $pagename = basename($_SERVER['PHP_SELF']);
 require('init.php');
 
 $id = @$_REQUEST['id'];
-$title = 'Team '.htmlspecialchars(@$id);
+$title = 'User '.htmlspecialchars(@$id);
 
-if ( ! preg_match('/^\w*$/', $id) ) error("Invalid team id");
+if ( ! preg_match('/^' . IDENTIFIER_CHARS . '*$/', $id) ) error("Invalid team id");
 
 if ( isset($_GET['cmd'] ) ) {
 	$cmd = $_GET['cmd'];
 } else {
-	$refresh = '15;url='.$pagename.'?id='.urlencode($id).
+	$refresh = '30;url='.$pagename.'?id='.urlencode($id).
 		(isset($_GET['restrict'])?'&restrict='.urlencode($_GET['restrict']):'');
 }
 
 require(LIBWWWDIR . '/header.php');
-require(LIBWWWDIR . '/forms.php');
-require(LIBWWWDIR . '/team.cb.php');
+require(LIBWWWDIR . '/scoreboard.php');
 
 if ( IS_ADMIN && !empty($cmd) ):
 
@@ -61,7 +58,7 @@ echo addSelect('data[0][categoryid]', $cmap, @$row['categoryid'], true);
 <td><?php echo addTextArea('data[0][members]', @$row['members'], 40, 3)?></td></tr>
 <tr><td><label for="data_0__affilid_">Affiliation:</label></td>
 <td><?php
-$amap = $DB->q("KEYVALUETABLE SELECT affilid,name FROM team_affiliation ORDER BY affilid");
+$amap = $DB->q("KEYVALUETABLE SELECT affilid,name FROM team_affiliation ORDER BY name");
 $amap[''] = 'none';
 echo addSelect('data[0][affilid]', $amap, @$row['affilid'], true);
 ?>
@@ -108,6 +105,10 @@ $teamimage   = "../images/teams/"        . urlencode($row['login'])   . ".jpg";
 
 echo "<h1>Team ".htmlspecialchars($row['name'])."</h1>\n\n";
 
+if ( $row['enabled'] != 1 ) {
+	echo "<p><em>Team is disabled</em></p>\n\n";
+}
+
 putTeamSubmissionHistoryStats($id);
 
 if ( is_readable($teamimage) ) {
@@ -123,7 +124,7 @@ if ( is_readable($teamimage) ) {
 <tr><td scope="row">Host:</td><td><?php echo
 	(@$row['hostname'] ? printhost($row['hostname'], TRUE):'') ?></td></tr>
 <?php if (!empty($row['room'])): ?>
-<tr><td scope="row">Room:</td><td><?php echo htmlspecialchars($row['room'])?></td></tr>
+<tr><td scope="row">Location:</td><td><?php echo htmlspecialchars($row['room'])?></td></tr>
 <?php endif; ?>
 <?php
 
@@ -169,6 +170,9 @@ if ( IS_ADMIN ) {
 
 echo rejudgeForm('team', $id) . "\n\n";
 
+echo "<h3>Score</h3>\n\n";
+
+putTeamRow($cdata,array($id));
 
 echo '<h3>Submissions';
 if ( isset($key) ) {

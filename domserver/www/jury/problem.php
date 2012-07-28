@@ -2,11 +2,8 @@
 /**
  * View a problem
  *
- * $Id: problem.php 3225 2010-07-05 20:42:38Z werth $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
  */
 
 $pagename = basename($_SERVER['PHP_SELF']);
@@ -16,14 +13,14 @@ require('init.php');
 $id = @$_REQUEST['id'];
 $title = 'Problem '.htmlspecialchars(@$id);
 
-if ( ! preg_match('/^\w*$/', $id) ) error("Invalid problem id");
+if ( ! preg_match('/^' . IDENTIFIER_CHARS . '*$/', $id) ) error("Invalid problem id");
 
 if ( isset($_POST['cmd']) ) {
 	$pcmd = $_POST['cmd'];
 } elseif ( isset($_GET['cmd'] ) ) {
 	$cmd = $_GET['cmd'];
 } else {
-	$refresh = '15;url='.$pagename.'?id='.urlencode($id);
+	$refresh = '30;url='.$pagename.'?id='.urlencode($id);
 }
 
 if ( !empty($pcmd) ) {
@@ -33,11 +30,13 @@ if ( !empty($pcmd) ) {
 	if ( isset($pcmd['toggle_submit']) ) {
 		$DB->q('UPDATE problem SET allow_submit = %i WHERE probid = %s',
 			   $_POST['val']['toggle_submit'], $id);
+			auditlog('problem', $id, 'set allow submit', $_POST['val']['toggle_submit']);
 	}
 
 	if ( isset($pcmd['toggle_judge']) ) {
 		$DB->q('UPDATE problem SET allow_judge = %i WHERE probid = %s',
 			   $_POST['val']['toggle_judge'], $id);
+			auditlog('problem', $id, 'set allow judge', $_POST['val']['toggle_judge']);
 	}
 }
 if ( isset($_POST['upload']) ) {
@@ -46,7 +45,8 @@ if ( isset($_POST['upload']) ) {
 		$zip = openZipFile($_FILES['problem_archive']['tmp_name']);
 		$id = importZippedProblem($zip, empty($id) ? NULL : $id);
 		$zip->close();
-		$refresh = '15;url='.$pagename.'?id='.urlencode($id);
+		auditlog('problem', $id, 'upload zip', $_FILES['problem_archive']['name']);
+		header('Location: '.$pagename.'?id='.urlencode($id));
 	} else {
 		error("Missing filename for problem upload");
 	}
@@ -55,7 +55,6 @@ if ( isset($_POST['upload']) ) {
 $jscolor=true;
 
 require(LIBWWWDIR . '/header.php');
-require(LIBWWWDIR . '/forms.php');
 
 if ( IS_ADMIN && !empty($cmd) ):
 

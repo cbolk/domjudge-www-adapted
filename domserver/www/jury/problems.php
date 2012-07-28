@@ -2,18 +2,14 @@
 /**
  * View the problems
  *
- * $Id: problems.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
  */
 
 require('init.php');
 $title = 'Problems';
 
 require(LIBWWWDIR . '/header.php');
-require(LIBWWWDIR . '/forms.php');
 
 echo "<h1>List of problems</h1>\n\n";
 
@@ -21,7 +17,7 @@ $res = $DB->q('SELECT p.*, c.*, COUNT(testcaseid) AS testcases
                FROM problem p
                NATURAL JOIN contest c
                LEFT JOIN testcase USING (probid)
-               GROUP BY probid ORDER BY p.cid, probid');
+               GROUP BY probid ORDER BY (p.cid = %i) DESC, p.cid, probid', $cid);
 
 if( $res->count() == 0 ) {
 	echo "<p class=\"nodata\">No problems defined</p>\n\n";

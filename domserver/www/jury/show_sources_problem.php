@@ -2,8 +2,6 @@
 /**
  * Show source code from the database for all submissions to a problem.
  *
- * $Id: show_sources_problem.php 3577 2011-07-30 20:00:45Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  *
@@ -25,8 +23,9 @@ require('init.php');
 $id = (int)$_GET['id'];
 
 $strSQL = 'KEYTABLE SELECT s.submitid AS ARRAYKEY, t.name, s.langid, l.name AS lang, sourcecode, result, verified FROM submission s
-				INNER JOIN judging j ON s.submitid = j.submitid INNER JOIN team t ON s.teamid = t.login
-				INNER JOIN language l ON s.langid = l.langid 
+				INNER JOIN submission_file sf USING (submitid)
+				INNER JOIN judging j USING (submitid) INNER JOIN team t ON s.teamid = t.login
+				INNER JOIN language l USING (langid) 
 				 WHERE probid = ' . $id . ' ORDER BY s.submitid';
 $sdata = $DB->q($strSQL);
 if ( empty($sdata) ) error ("No submissions for problem $id");

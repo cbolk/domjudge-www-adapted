@@ -2,27 +2,23 @@
 /**
  * View a row in team_affiliation: an institution, company etc
  *
- * $Id: team_affiliation.php 3595 2011-08-14 10:06:53Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
  */
 
 $pagename = basename($_SERVER['PHP_SELF']);
 
 require('init.php');
+require(LIBWWWDIR . '/scoreboard.php');
 
 $id = @$_GET['id'];
 $title = "Affiliation: " .htmlspecialchars(@$id);
 
-if ( ! preg_match('/^\w*$/', $id) ) error("Invalid affiliation id");
+if ( ! preg_match('/^' . IDENTIFIER_CHARS . '*$/', $id) ) error("Invalid affiliation id");
 
 $cmd = @$_GET['cmd'];
 
 if ( IS_ADMIN && ($cmd == 'add' || $cmd == 'edit') ) {
-
-	require(LIBWWWDIR . '/forms.php');
 
 	$title = "Affiliation: " . htmlspecialchars($cmd);
 
@@ -135,6 +131,10 @@ if ( $teams->count() == 0 ) {
 		$link . htmlspecialchars($team['name']) . "</a></td></tr>\n";
 	}
 	echo "</tbody>\n</table>\n\n";
+
+	echo "<p>";
+	putTeamRow($cdata,$listteams);
+	echo "</p>\n\n";
 }
 
 require(LIBWWWDIR . '/footer.php');

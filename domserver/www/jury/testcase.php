@@ -2,12 +2,8 @@
 /**
  * View/edit testcases
  *
- * $Id: testcase.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- *
- * Modified by CBolk
  */
 
 $pagename = basename($_SERVER['PHP_SELF']);
@@ -118,15 +114,13 @@ if ( isset ($_GET['move']) ) {
 $title = 'Testcases for problem '.htmlspecialchars(@$probid);
 
 require(LIBWWWDIR . '/header.php');
-require(LIBWWWDIR . '/forms.php');
-
-requireAdmin();
 
 if ( ! $probid ) error("Missing or invalid problem id");
 
 echo "<h1>" . $title ."</h1>\n\n";
+
 $result = '';
-if ( isset($_POST['probid']) ) {
+if ( isset($_POST['probid']) && IS_ADMIN ) {
 
 	$maxrank = 0;
 	foreach($data as $rank => $row) {
@@ -150,10 +144,12 @@ if ( isset($_POST['probid']) ) {
 					$DB->q("UPDATE testcase SET md5sum_$inout = %s, $inout = %s
 							WHERE probid = %s AND rank = %i",
 						   md5($content), $content, $probid, $rank);
+					auditlog('testcase', $probid, 'updated', "$inout rank $rank");
 				} else {
 					$DB->q("INSERT INTO testcase (probid,rank,md5sum_$inout,$inout)
 							VALUES (%s,%i,%s,%s)",
 						   $probid, $rank, md5($content), $content);
+					auditlog('testcase', $probid, 'added', "$inout rank $rank");
 				}
 				$result .= "<li>Updated $inout for testcase $rank from " .
 					htmlspecialchars($_FILES[$fileid]['name'][$rank]) .
@@ -169,10 +165,13 @@ if ( isset($_POST['probid']) ) {
 					$DB->q("UPDATE testcase SET md5sum_$inout = %s, $inout = %s, $iofilename = %s
 							WHERE probid = %s AND rank = %i",
 						   md5($content), $content, $_FILES[$fileioid]['name'][$rank], $probid, $rank);
+					auditlog('testcase', $probid, 'updated', "rank $rank");
+						
 				} else {
 					$DB->q("INSERT INTO testcase (probid,rank,md5sum_$inout,$inout, $iofilename)
 							VALUES (%s,%i,%s,%s,%s)",
 						   $probid, $rank, md5($content), $content, $_FILES[$fileioid]['name'][$rank]);
+					auditlog('testcase', $probid, 'added', "rank $rank");
 				}
 				$result .= "<li>Updated $iofilename for testcase $rank from " .
 					htmlspecialchars($_FILES[$fileioid]['name'][$rank]) .
@@ -186,6 +185,7 @@ if ( isset($_POST['probid']) ) {
 			$DB->q('UPDATE testcase SET description = %s WHERE probid = %s
 					AND rank = %i', $_POST['description'][$rank], $probid, $rank);
 	
+			auditlog('testcase', $probid, 'updated description', "rank $rank");
 			$result .= "<li>Updated description for testcase $rank</li>\n";
 		}
 
@@ -224,6 +224,7 @@ if ( isset($_POST['probid']) ) {
 			        "','".@$content['input']."','".@$content['output']."','".$_FILES['add_ifile']['name']."','" . 
 			        $_FILES['add_ofile']['name'] . "','" .  @$_POST['add_desc'] . "'," . @$_POST['add_public'].")";
 			$DB->q($strSQL);
+			auditlog('testcase', $probid, 'added', "rank $rank");
 			$result .= $strSQL;
 			$result .= "<li>Added new testcase $rank from:<br/>" . $src . "</li>\n";
 		}
@@ -243,9 +244,10 @@ if ( !empty($result) ) {
 echo "<p><a href=\"problem.php?id=" . urlencode($probid) . "\">back to problem " .
 	htmlspecialchars($probid) . "</a></p>\n\n";
 
-echo addForm('', 'post', null, 'multipart/form-data') .
-    addHidden('probid', $probid);
-
+if ( IS_ADMIN ) {
+	echo addForm('', 'post', null, 'multipart/form-data') .
+	    addHidden('probid', $probid);
+}
     
 
 if ( count($data)==0 ) {
@@ -263,8 +265,20 @@ if ( count($data)==0 ) {
 <th scope="col">#</th><th scope="col">download</th>
 <th scope="col">size</th>
 <!--th scope="col">md5</th -->
-<th scope="col">upload new data (stdin/stdout)</th><th scope="col">upload new file in/out</th><th scope="col">description</th>
-<th scope="col">public</th><th scope="col">delete</th>
+<?php
+	if ( IS_ADMIN ) {
+		echo '<th scope="col">upload new data (stdin/stdout)</th>';
+		echo '<th scope="col">upload new file in/out</th>';
+	}
+?>
+<th scope="col">description</th>
+<th scope="col">public</th>
+<?php
+	if ( IS_ADMIN ) {
+		echo '<th scope="col">delete</th>';
+	}
+?>
+
 </tr></thead>
 <tbody>
 <?php

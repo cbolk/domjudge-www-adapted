@@ -2,8 +2,6 @@
 /**
  * Functionality to delete data from this interface.
  *
- * $Id: delete.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -42,9 +40,25 @@ $title = 'Delete from ' . $t;
 require(LIBWWWDIR . '/header.php');
 
 // Check if we can really delete this.
+$warnings = array();
 foreach($k as $key => $val) {
-	if ( $errtable = fk_check ( "$t.$key", $val ) ) {
-		error ( "$t.$key \"$val\" is still referenced in $errtable, cannot delete." );
+	if ( ($tables = fk_check ("$t.$key", $val))!==NULL ) {
+		foreach ( $tables as $table => $action ) {
+			switch ( $action ) {
+			case 'RESTRICT':
+				error("$t.$key \"$val\" is still referenced in $table, cannot delete.");
+			case 'CASCADE':
+				$warnings[] = "cascade to $table";
+				break;
+			case 'SETNULL':
+				$warnings[] = "create dangling references in $table";
+				break;
+			case 'NOCONSTRAINT':
+				break;
+			default:
+				error("$t.$key is referenced in $table with unknown action '$action'.");
+			}
+		}
 	}
 }
 
@@ -53,6 +67,7 @@ if (isset($_POST['confirm'] ) ) {
 	// LIMIT 1 is a security measure to prevent our bugs from
 	// wiping a table by accident.
 	$DB->q("DELETE FROM $t WHERE %S LIMIT 1", $k);
+	auditlog($t, implode(', ', $k), 'deleted');
 
 	echo "<p>" . ucfirst($t) . " <strong>" . htmlspecialchars(implode(", ", $k)) .
 		"</strong> has been deleted.</p>\n\n";
@@ -65,8 +80,6 @@ if (isset($_POST['confirm'] ) ) {
 		echo "<p><a href=\"" . $tablemulti . ".php\">back to $tablemulti</a></p>";
 	}
 } else {
-	require_once(LIBWWWDIR . '/forms.php');
-
 	echo addForm('delete.php') .
 		addHidden('table', $t);
 	foreach ( $k as $key => $val ) {
@@ -76,7 +89,9 @@ if (isset($_POST['confirm'] ) ) {
 	echo msgbox (
 		"Really delete?",
 		"You're about to delete $t <strong>" .
-		htmlspecialchars(join(", ", array_values($k))) . "</strong>.<br /><br />\n\n" .
+		htmlspecialchars(join(", ", array_values($k))) . "</strong>.<br />\n" .
+		(count($warnings)>0 ? "<br /><strong>Warning, this will:</strong><br />" .
+		 implode('<br />', $warnings) : '' ) . "<br /><br />\n" .
 		"Are you sure?<br /><br />\n\n" .
 		( empty($referrer) ? '' : addHidden('referrer', $referrer) ) .
 		addSubmit(" Never mind... ", 'cancel') .

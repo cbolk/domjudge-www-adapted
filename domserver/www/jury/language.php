@@ -2,13 +2,11 @@
 /**
  * View a language
  *
- * $Id: language.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
+ *
  * Modified by CBolk
  */
-
 $pagename = basename($_SERVER['PHP_SELF']);
 
 require('init.php');
@@ -16,7 +14,7 @@ require('init.php');
 $id = @$_REQUEST['id'];
 $title = 'Language '.htmlspecialchars(@$id);
 
-if ( ! preg_match('/^\w*$/', $id) ) error("Invalid language id");
+if ( ! preg_match('/^' . IDENTIFIER_CHARS . '*$/', $id) ) error("Invalid language id");
 
 if ( isset($_POST['cmd']) ) {
 	$pcmd = $_POST['cmd'];
@@ -31,16 +29,17 @@ if ( !empty($pcmd) ) {
 	if ( isset($pcmd['toggle_submit']) ) {
 		$DB->q('UPDATE language SET allow_submit = %i WHERE langid = %s',
 		       $_POST['val']['toggle_submit'], $id);
+	auditlog('language', $id, 'set allow submit', $_POST['val']['toggle_submit']);
 	}
 
 	if ( isset($pcmd['toggle_judge']) ) {
 		$DB->q('UPDATE language SET allow_judge = %i WHERE langid = %s',
 		       $_POST['val']['toggle_judge'], $id);
+		auditlog('language', $id, 'set allow judge', $_POST['val']['toggle_judge']);
 	}
 }
 
 require(LIBWWWDIR . '/header.php');
-require(LIBWWWDIR . '/forms.php');
 
 if ( IS_ADMIN && !empty($cmd) ):
 

@@ -2,11 +2,8 @@
 /**
  * View the judgehosts
  *
- * $Id: judgehosts.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
  */
 
 require('init.php');
@@ -20,6 +17,7 @@ echo "<h1>List of judgehosts</h1>\n\n";
 if ( IS_ADMIN && (isset($_POST['cmd-activate']) || isset($_POST['cmd-deactivate']) ) ) {
 	$DB->q('UPDATE judgehost SET active = %i',
 	       (isset($_POST['cmd-activate']) ? 1:0));
+	auditlog('judgehost', null, 'marked all ' . (isset($_POST['cmd-activate'])?'active':'inactive'));
 }
 if ( IS_ADMIN && ($cmd == 'add' || $cmd == 'edit') ) {
 	require ( LIBWWWDIR . '/forms.php' ) ;
@@ -101,8 +99,6 @@ if( $res->count() == 0 ) {
 }
 
 if ( IS_ADMIN ) {
-	require(LIBWWWDIR . '/forms.php');
-
 	echo addForm('judgehosts.php') .
 		"<p>" .
 		addSubmit('Start all judgehosts', 'cmd-activate') .

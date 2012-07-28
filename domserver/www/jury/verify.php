@@ -2,8 +2,6 @@
 /**
  * Change the verification status of a given judging.
  *
- * $Id: verify.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -11,16 +9,18 @@
 require('init.php');
 $id    = @$_POST['id'];
 $val   = @$_POST['val'];
+$comment = @$_POST['comment'];
 if ( empty($id) ) error("No judging ID passed to mark as verified.");
 
-$verifier = getVerifier("");
+$jury_member = getJuryMember();
 
-// Explicitly unset verifier when unmarking verified: otherwise this
-// judging would be marked as "viewing".
+// Explicitly unset jury_member when unmarking verified: otherwise this
+// judging would be marked as "claimed".
 $cnt = $DB->q('RETURNAFFECTED UPDATE judging
-               SET verified = %i, verifier = ' . ($val ? '%s ' : 'NULL %_ ') .
-              'WHERE judgingid = %i',
-              $val, $verifier, $id);
+               SET verified = %i, jury_member = ' . ($val ? '%s ' : 'NULL %_ ') .
+              ', verify_comment = %s WHERE judgingid = %i',
+              $val, $jury_member, $comment, $id);
+auditlog('judging', $id, $val ? 'set verified' : 'set unverified');
 
 if ( $cnt == 0 ) {
 	error("Judging '$id' not found or nothing changed.");
@@ -28,13 +28,13 @@ if ( $cnt == 0 ) {
 	error("Validated more than one judging.");
 }
 
-$jdata = $DB->q('TUPLE SELECT s.submitid, s.cid, s.teamid, s.probid, s.langid
+$jdata = $DB->q('TUPLE SELECT j.result, s.submitid, s.cid, s.teamid, s.probid, s.langid
                  FROM judging j
                  LEFT JOIN submission s USING (submitid)
                  WHERE judgingid = %i', $id);
 
-if ( VERIFICATION_REQUIRED ) {
-	calcScoreRow($jdata['cid'], $jdata['teamid'], $jdata['probid']);
+if ( dbconfig_get('verification_required', 0) ) {
+				calcScoreRow($jdata['cid'], $jdata['teamid'], $jdata['probid']);
 
 	// log to event table (case of no verification required is handled
 	// in judge/judgedaemon)
@@ -42,10 +42,21 @@ if ( VERIFICATION_REQUIRED ) {
 	        VALUES (%s, %i, %i, %s, %s, %i, "problem judged")',
 	       now(), $jdata['cid'], $jdata['teamid'], $jdata['langid'],
 	       $jdata['probid'], $jdata['submitid']);
+
+	if ( $jdata['result'] == 'correct' ) {
+		$DB->q('INSERT INTO balloon (submitid)
+		        VALUES(%i)',
+		        $jdata['submitid']);
+	}
 }
 
-setVerifier($verifier);
-
-/* redirect back. */
-header('Location: submission.php?id=' .
-	urlencode($jdata['submitid']) . '&jid=' . urlencode($id));
+/* redirect to referrer page after verification
+ * or back to submission page when unverifying. */
+if ( $val ) {
+	$redirect = @$_POST['redirect'];
+	if ( empty($redirect) ) $redirect = 'submissions.php';
+	header('Location: '.$redirect);
+} else {
+	header('Location: submission.php?id=' .
+	       urlencode($jdata['submitid']) . '&jid=' . urlencode($id));
+}

@@ -6,8 +6,6 @@
  * $key must be one of (judging.judgehost, submission.teamid, submission.probid,
  * submission.langid, submission.submitid)
  *
- * $Id: rejudge.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -16,6 +14,7 @@ require('init.php');
 
 /** These are the tables that we can deal with */
 $tablemap = array (
+	'contest'    => 's.cid',
 	'judgehost'  => 'j.judgehost',
 	'language'   => 's.langid',
 	'problem'    => 's.probid',
@@ -39,7 +38,7 @@ global $DB;
 // over the results one at a time.
 
 // Special case 'submission' for admin overrides
-if ( IS_ADMIN && $table == 'submission' ) {
+if ( IS_ADMIN && ($table == 'submission' || $table == 'contest') ) {
 	$res = $DB->q('SELECT j.judgingid, s.submitid, s.teamid, s.probid
 	               FROM judging j
 	               LEFT JOIN submission s USING (submitid)
@@ -65,6 +64,8 @@ while ( $jud = $res->next() ) {
 
 	calcScoreRow($cid, $jud['teamid'], $jud['probid']);
 	$DB->q('COMMIT');
+		
+	auditlog('judging', $jud['judgingid'], 'mark invalid', '(rejudge)');
 }
 
 

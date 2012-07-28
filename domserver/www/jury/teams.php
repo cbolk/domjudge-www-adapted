@@ -2,11 +2,8 @@
 /**
  * View the teams
  *
- * $Id: teams.php 3360 2010-08-19 19:26:55Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
  */
 
 require('init.php');
@@ -16,7 +13,7 @@ $teams = $DB->q('SELECT t.*,c.name AS catname,a.name AS affname
                  FROM team t
                  LEFT JOIN team_category c USING (categoryid)
                  LEFT JOIN team_affiliation a ON (t.affilid = a.affilid)
-                 ORDER BY c.sortorder, t.name');
+                 ORDER BY c.sortorder, t.name COLLATE utf8_general_ci');
 
 $nsubmits = $DB->q('KEYTABLE SELECT teamid AS ARRAYKEY, COUNT(teamid) AS cnt
                     FROM submission s

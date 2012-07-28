@@ -2,8 +2,6 @@
 /**
  * View of one contest.
  *
- * $Id: contest.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -17,8 +15,6 @@ require(LIBWWWDIR . '/header.php');
 
 if ( IS_ADMIN && !empty($_GET['cmd']) ):
 	$cmd = $_GET['cmd'];
-
-	require(LIBWWWDIR . '/forms.php');
 
 	echo "<h2>" . htmlspecialchars(ucfirst($cmd)) . " contest</h2>\n\n";
 
@@ -40,19 +36,19 @@ if ( IS_ADMIN && !empty($_GET['cmd']) ):
 <tr><th class='spec' scope='row'><label for="data_0__contestname_">Contest name:</label></th>
 <td><?php echo addInput('data[0][contestname]', @$row['contestname'], 40, 255)?></td></tr>
 <tr><th class='spec' scope='row'><label for="data_0__activatetime_">Activate time:</label></th>
-<td><?php echo addInput('data[0][activatetime]', @$row['activatetime'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
+<td><?php echo addInput('data[0][activatetime_string]', @$row['activatetime_string'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
 
 <tr><th class='spec' scope='row'><label for="data_0__starttime_">Start time:</label></th>
 <td><?php echo addInput('data[0][starttime]', @$row['starttime'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
 
 <tr><th class='spec' scope='row'><label for="data_0__freezetime_">Scoreboard freeze time:</label></th>
-<td><?php echo addInput('data[0][freezetime]', @$row['freezetime'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
+<td><?php echo addInput('data[0][freezetime_string]', @$row['freezetime_string'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
 
 <tr><th class='spec' scope='row'><label for="data_0__endtime_">End time:</label></th>
-<td><?php echo addInput('data[0][endtime]', @$row['endtime'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
+<td><?php echo addInput('data[0][endtime_string]', @$row['endtime_string'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
 
 <tr><th class='spec' scope='row'><label for="data_0__unfreezetime_">Scoreboard unfreeze time:</label></th>
-<td><?php echo addInput('data[0][unfreezetime]', @$row['unfreezetime'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
+<td><?php echo addInput('data[0][unfreezetime_string]', @$row['unfreezetime_string'], 20, 19)?> (yyyy-mm-dd hh:mm:ss)</td></tr>
 
 <tr><th class='spec' scope='row'>Enabled:</th><td>
 <?php echo addRadioButton('data[0][enabled]', (!isset($row['enabled']) ||  $row['enabled']), 1)?> <label for="data_0__enabled_1">yes</label>
@@ -63,7 +59,7 @@ if ( IS_ADMIN && !empty($_GET['cmd']) ):
 <?php
 echo addHidden('cmd', $cmd) .
 	addHidden('table','contest') .
-	addHidden('referrer', @$_GET['referrer']) .
+	addHidden('referrer', @$_GET['referrer']) . ( $cmd == 'edit'?(strstr(@$_GET['referrer'],'?') === FALSE?'?edited=1':'&edited=1'):'')) .
 	addSubmit('Save') .
 	addSubmit('Cancel', 'cancel') .
 	addEndForm();
@@ -74,6 +70,18 @@ exit;
 endif;
 
 if ( ! $id ) error("Missing or invalid contest id");
+
+if ( isset($_GET['edited']) ) {
+
+	echo addForm('refresh_cache.php') .
+            msgbox (
+                "Warning: Refresh scoreboard cache",
+		"If the contest start time was changed, it may be necessary to recalculate any cached scoreboards.<br /><br />" .
+		addSubmit('recalculate caches now', 'refresh') 
+		) .
+		addEndForm();
+
+}
 
 
 $data = $DB->q('TUPLE SELECT * FROM contest WHERE cid = %i', $id);
@@ -95,23 +103,26 @@ echo '<tr><th class="spec" scope="row">Name:</th><td>' .
 	htmlspecialchars($data['contestname']) .
 	"</td></tr>\n";
 echo '<tr><th class="spec" scope="row">Activate time:</th><td>' .
-	htmlspecialchars(@$data['activatetime']) .
+	htmlspecialchars(@$data['activatetime_string']) .
 	"</td></tr>\n";
 echo '<tr><th class="spec" scope="row">Start time:</th><td>' .
 	htmlspecialchars($data['starttime']) .
 	"</td></tr>\n";
 echo '<tr><th class="spec" scope="row">Scoreboard freeze:</th><td>' .
-	(empty($data['freezetime']) ? "-" : htmlspecialchars(@$data['freezetime'])) .
+	(empty($data['freezetime_string']) ? "-" : htmlspecialchars(@$data['freezetime_string'])) .
 	"</td></tr>\n";
 echo '<tr><th class="spec" scope="row">End time:</th><td>' .
-	htmlspecialchars($data['endtime']) .
+	htmlspecialchars($data['endtime_string']) .
 	"</td></tr>\n";
 echo '<tr><th class="spec" scope="row">Scoreboard unfreeze:</th><td>' .
-	(empty($data['unfreezetime']) ? "-" : htmlspecialchars(@$data['unfreezetime'])) .
+	(empty($data['unfreezetime_string']) ? "-" : htmlspecialchars(@$data['unfreezetime_string'])) .
 	"</td></tr>\n";
 echo "</table>\n\n";
 
 if ( IS_ADMIN ) {
+	if ( $cid == $data['cid'] ) {
+		echo "<p>". rejudgeForm('contest', $data['cid']) . "</p>\n\n";
+	}	
 	echo "<p>" .
 		editLink('contest',$data['cid']) . "\n" .
 		delLink('contest','cid',$data['cid']) ."</p>\n\n";

@@ -2,8 +2,6 @@
 /**
  * Manage passwords for all users.
  *
- * $Id: genpasswds.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -11,7 +9,6 @@
 require('init.php');
 $title = 'Generate Passwords';
 require(LIBWWWDIR . '/header.php');
-require(LIBWWWDIR . '/forms.php');
 requireAdmin();
 ?>
 
@@ -19,7 +16,7 @@ requireAdmin();
 
 <?php
 $teams = $DB->q('KEYVALUETABLE SELECT login, name FROM team
-                 ORDER BY categoryid ASC, name ASC');
+                 ORDER BY categoryid ASC, name COLLATE utf8_general_ci ASC');
 
 if ( empty($teams) ) {
 	echo "<p class=\"nodata\">No teams defined.</p>\n\n";
