@@ -3,11 +3,11 @@
  * Functions that will check a given row of a given table
  * for problems, and if necessary, normalise it.
  *
- * $Id: checkers.jury.php 3215 2010-06-15 22:24:59Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
+
+define('ID_REGEX', '/^' . IDENTIFIER_CHARS . '+$/');
 
 /**
  * Store an error from the checker functions below.
@@ -21,8 +21,8 @@ function ch_error($string)
 function check_team($data, $keydata = null)
 {
 	$id = (isset($data['login']) ? $data['login'] : $keydata['login']);
-	if ( ! preg_match ( '/^\w+$/', $id ) ) {
-		ch_error("Team ID (login) may only contain letters, numbers and underscores.");
+	if ( ! preg_match ( ID_REGEX, $id ) ) {
+		ch_error("Team ID (login) may only contain characters " . IDENTIFIER_CHARS . ".");
 	}
 	return $data;
 }
@@ -30,8 +30,8 @@ function check_team($data, $keydata = null)
 function check_affiliation($data, $keydata = null)
 {
 	$id = (isset($data['affilid']) ? $data['affilid'] : $keydata['affilid']);
-	if ( ! preg_match ( '/^\w+$/', $id ) ) {
-		ch_error("Team affiliation ID may only contain letters, numbers and underscores.");
+	if ( ! preg_match ( ID_REGEX, $id ) ) {
+		ch_error("Team affiliation ID may only contain characters " . IDENTIFIER_CHARS . ".");
 	}
 	$affillogo = '../images/affiliations/' . urlencode($id) . '.png';
 	if ( ! file_exists ( $affillogo ) ) {
@@ -51,38 +51,61 @@ function check_problem($data, $keydata = null)
 		ch_error("Timelimit is not a valid positive integer");
 	}
 	$id = (isset($data['probid']) ? $data['probid'] : $keydata['probid']);
-	if ( ! preg_match ( '/^\w+$/', $id ) ) {
-		ch_error("Problem ID may only contain letters, numbers and underscores.");
+	if ( ! preg_match ( ID_REGEX, $id ) ) {
+		ch_error("Problem ID may only contain characters " . IDENTIFIER_CHARS . ".");
 	}
 	return $data;
 }
 
 function check_language($data, $keydata = null)
 {
+	global $langexts;
+
 	if ( ! is_numeric($data['time_factor']) || $data['time_factor'] < 0 ) {
 		ch_error("Timelimit is not a valid positive factor");
 	}
 	$id = (isset($data['langid']) ? $data['langid'] : $keydata['langid']);
-	if ( ! preg_match ( '/^\w+$/', $id ) ) {
-		ch_error("Language ID may only contain letters, numbers and underscores.");
-	}
-	if ( strpos($data['extension'], '.') !== FALSE ) {
-		ch_error("Do not include the dot (.) in the extension");
+	if ( ! preg_match ( ID_REGEX, $id ) ) {
+		ch_error("Language ID may only contain characters " . IDENTIFIER_CHARS . ".");
 	}
 
-	$langs = preg_split("/\s+/", LANG_EXTS);
-	$langfound = FALSE;
-	foreach ($langs as $lang) {
-		$langdata = explode(',', $lang);
-		if ( $langdata[1] == $data['extension'] ) {
-			$langfound = TRUE;
-		}
-	}
-	if ( !$langfound ) {
-		ch_error("Language extension not found in LANG_EXTS from domserver-config.php");
+	if ( $langexts[$id]!=$id ) {
+		ch_error("Language ID/extension not found or set incorrectly " .
+		         "in LANG_EXTS from domserver-config.php");
 	}
 
 	return $data;
+}
+
+function check_relative_time($time, $starttime, $field)
+{
+	if ($time[0] == '+' || $time[0] == '-') {
+		// convert relative times to absolute ones
+		$neg = ($time[0] == '-');
+		$time[0] = '0';
+		$times = explode(':', $time, 3);
+		if ( count($times) == 2 ) $times[2] = 0;
+		if ( count($times) == 3 &&
+		     is_numeric($times[0]) &&
+		     is_numeric($times[1]) && $times[1] < 60 &&
+		     is_numeric($times[2]) && $times[2] < 60 ) {
+			$hours = $times[0];
+			$minutes = $times[1];
+			$seconds = 60 * ($minutes + 60 * $hours);
+			if ($neg) {
+				$seconds *= -1;
+			}
+			$ret = strftime(MYSQL_DATETIME_FORMAT, strtotime($starttime) + $seconds);
+		} else {
+			ch_error($field . " is not correctly formatted, expecting: +/-hh:mm");
+			$ret = null;
+		}
+	} else {
+		// time is absolute, just copy
+		$ret = $time;
+	}
+
+	return $ret;
 }
 
 function check_contest($data, $keydata = null)
@@ -90,8 +113,23 @@ function check_contest($data, $keydata = null)
 	// are these dates valid?
 	foreach(array('starttime','endtime','freezetime',
 		'unfreezetime','activatetime') as $f) {
+		if ($f != 'starttime') {
+			// The true input date/time strings are preserved in the
+			// *_string variables, since these may be relative times
+			// that need to be kept as is.
+			$data[$f] = $data[$f.'_string'];
+			$data[$f] = check_relative_time($data[$f], $data['starttime'], $f);
+		}
 		if ( !empty($data[$f]) ) {
 			check_datetime($data[$f]);
+		}
+	}
+
+	// are required times specified?
+	foreach(array('activatetime','starttime','endtime') as $f) {
+		if ( empty($data[$f]) ) {
+			ch_error("Contest $f is empty");
+			return $data;
 		}
 	}
 

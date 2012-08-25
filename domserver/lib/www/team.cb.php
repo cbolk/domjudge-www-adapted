@@ -1,9 +1,7 @@
 <?php
-
 /**
  * Functions for team additional information.
  *
- * $Id: team.cb.php 3209 2010-06-12 00:13:43Z cbolk $
  *
  * Added to the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
@@ -94,7 +92,7 @@ function putTeamSubmissionHistoryStats($teamid) {
  */
 function getTeamStats($teamid){
 	global $DB;
-	$strSQL = "SELECT scoreboard_jury.cid, probid, submissions AS number, is_correct AS isOK
+	$strSQL = "SELECT scoreboard_jury.cid, probid, submissions AS number, pending AS pending, is_correct AS isOK
 				FROM scoreboard_jury INNER JOIN contest ON scoreboard_jury.cid = contest.cid
 				WHERE teamid = '" . $teamid . "'   
 				ORDER BY starttime;";
@@ -109,6 +107,7 @@ function renderTeamStats($teamid,$tdata){
 	$ncontests = 0;
 	$nproblems = 0;
 	$nsubs = 0;
+	$npend = 0;
 	$nok = 0;
 	$cid = -1;
 	$pid = -1;
@@ -125,6 +124,7 @@ function renderTeamStats($teamid,$tdata){
 		}
 				
 		$nsubs =  $nsubs + $v['number'];
+		$npend =  $npend + $v['pending'];
 		$nok = $nok + $v['isOK'];
 	}
 	
@@ -139,6 +139,9 @@ function renderTeamStats($teamid,$tdata){
     echo "    <li>\n";
     echo "      <strong>" . $nsubs . "</strong>\n";
     echo "      <span>submissions</span></li>\n";
+    echo "    <li>\n";
+    echo "      <strong>" . $npend . "</strong>\n";
+    echo "      <span>pending</span></li>\n";
     echo "    <li>\n";
     echo "      <strong>" . $nok . "</strong>\n";
     echo "      <span>correct</span></li>\n";

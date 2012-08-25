@@ -156,8 +156,8 @@ function putClarificationList($clars, $team = NULL)
 	}
 
 	echo "<table class=\"list sortable\">\n<thead>\n";
-	echo "<tr><th scope=\"col\">ID</th><th scope=\"col\">from</th>" .
-	     "<th scope=\"col\">to</th><th scope=\"col\">subject</th>" .
+	echo "<tr><th scope=\"col\" width=\"100px\" >from</th>" .
+	     "<th scope=\"col\" width=\"100px\" >to</th><th scope=\"col\">subject</th>" .
 	     "<th scope=\"col\">time</th>" .
 	     "<th scope=\"col\">text</th></tr>\n</thead>\n<tbody>\n";
 
@@ -174,7 +174,8 @@ function putClarificationList($clars, $team = NULL)
 		else
 			echo '<tr>';
 
-		echo '<td>' . $link . $clar['clarid'] . '</a></td>';
+//CB: useless to see it
+//		echo '<td>' . $link . $clar['clarid'] . '</a></td>';
 
 		$sender = htmlspecialchars($clar['sender']);
 		$recipient = htmlspecialchars($clar['recipient']);
@@ -212,6 +213,7 @@ function putClarificationList($clars, $team = NULL)
 	}
 	echo "</tbody>\n</table>\n\n";
 }
+
 
 /**
  * Output a form to send a new clarification.

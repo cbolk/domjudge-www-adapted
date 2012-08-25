@@ -27,7 +27,11 @@ $ncorrect = $DB->q('KEYTABLE SELECT teamid AS ARRAYKEY, COUNT(teamid) AS cnt
 
 require(LIBWWWDIR . '/header.php');
 
-echo "<h1>List of teams (<a href='teamsdetailed.php'>details</a>)</h1>\n\n";
+echo "<h1><div class='fleft'>List of teams (<a href='teamsdetailed.php'>details</a>)</div>&nbsp;\n";
+if ( IS_ADMIN ) {
+	echo "<div class='fright'>" . addLink('team') ."</div>\n\n";
+}
+echo "</h1>";
 
 if( $teams->count() == 0 ) {
 	echo "<p class=\"nodata\">No teams defined</p>\n\n";
@@ -38,7 +42,7 @@ if( $teams->count() == 0 ) {
 		"<th class='theader' scope=\"col\">host</th>" .
 		"<th class=\"sorttable_nosort theader\"></th><th class='theader' align=\"left\" " .
 		"scope=\"col\">status</th>" .
-	  "<th class='theader' scope=\"col\">edit</th>" .
+	  "<th class='theader' scope=\"col\">&nbsp;edit&nbsp;</th>" .
 	  "<th class='theader' scope=\"col\">delete</th>" .
 		"</tr>\n";
 
@@ -99,8 +103,8 @@ if( $teams->count() == 0 ) {
 		echo "</td>";
 		echo "<td class='acenter' title=\"$numcor correct / $numsub submitted\">$numcor / $numsub</td>";
 		if ( IS_ADMIN ) {
-			echo "<td class=\"editdel acenter\">" .
-				editLink('team', $row['login']) . "</td><td class='editdel acenter'>" .
+			echo "<td class=\"editdel tacenter\">" .
+				editLink('team', $row['login']) . "</td><td class='editdel tacenter'>" .
 				delLink('team','login',$row['login']) . "</td>";
 		}
 		echo "</tr>\n";

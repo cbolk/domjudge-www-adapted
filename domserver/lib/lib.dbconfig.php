@@ -2,34 +2,181 @@
 /**
  * Functions for handling database stored configuration.
  *
- * $Id: lib.dbconfig.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
 
-function dbconfig_get($name, $default, $cacheok = true)
-{
-	global $LIBDBCONFIG;
-
-        if ( (!isset($LIBDBCONFIG)) || (!$cacheok) ) {
-		dbconfig_init();
-	}
-
-	if ( isset($LIBDBCONFIG[$name]) ) return $LIBDBCONFIG[$name];
-
-	return $default;
-}
-
+/**
+ * Read configuration variables from DB configuration table and store
+ * in global variable for later use.
+ */
 function dbconfig_init()
 {
 	global $LIBDBCONFIG, $DB;
-	$LIBDBCONFIG = $DB->q('KEYVALUETABLE SELECT name,value FROM configuration');
+
+	$LIBDBCONFIG = array();
+	$res = $DB->q('SELECT * FROM configuration');
+
+	while ( $row = $res->next() ) {
+		$key = $row['name'];
+		// CB: modified as the PHO version is 5.1.3 and does
+		// not support json_decode
+		if ( function_exists('json_decode') ) 
+			$val = json_decode($row['value'], true);
+		else
+			$val = $row['value'];
+		
+		// json_last_error() is only available in PHP >= 5.3
+		if ( function_exists('json_last_error') ) {
+			switch ( json_last_error() ) {
+			case JSON_ERROR_NONE:
+				break;
+			case JSON_ERROR_DEPTH:
+				error("JSON config '$key' decode: maximum stack depth exceeded");
+			case JSON_ERROR_STATE_MISMATCH:
+				error("JSON config '$key' decode: underflow or the modes mismatch");
+			case JSON_ERROR_CTRL_CHAR:
+				error("JSON config '$key' decode: unexpected control character found");
+			case JSON_ERROR_SYNTAX:
+				error("JSON config '$key' decode: syntax error, malformed JSON");
+			/* Only available since PHP >= 5.3.3:
+			case JSON_ERROR_UTF8:
+				error("JSON config '$key' decode: malformed UTF-8 characters, possibly incorrectly encoded");
+			 */
+			default:
+				error("JSON config '$key' decode: unknown error");
+			}
+		} else {
+			if ( $val === NULL ) {
+				error("JSON config '$key' decode: unknown error");
+			}
+		}
+
+		//CB: too many problems ... commented out
+		/*
+		switch ( $type = $row['type'] ) {
+		case 'bool': //CB: modified when json_decode is not available
+			if ($val == 1)
+				$type = true;
+			else if ($val == 0)
+				$type = false;
+			else
+				error("invalid type '$type' for config variable '$key' with value $val");
+			break;			
+		case 'int':
+			if ( !is_int($val) ) {
+				error("invalid type '$type' for config variable '$key' with value $val');
+			}
+			break;
+		case 'string':
+			if ( !is_string($val) ) {
+				error("invalid type '$type' for config variable '$key' with value $val");
+			}
+			break;
+		case 'array_val':
+		case 'array_keyval':
+			if ( !is_array($val) ) {
+				error("invalid type '$type' for config variable '$key' with value $val");
+			}
+			break;
+		default:
+			error("unknown type '$type' for config variable '$key' with value $val");
+		}
+		*/
+		$LIBDBCONFIG[$key] = array('value' => $val,
+		                           'type' => $type,
+		                           'desc' => $row['description']);
+	}
 }
 
-function dbconfig_set($name, $value)
+/**
+ * Store configuration variables to the DB configuration table.
+ */
+function dbconfig_store()
 {
 	global $LIBDBCONFIG, $DB;
-	$DB->q('REPLACE INTO configuration (name,value) VALUES (%s,%s)', $name, $value);
-	$LIBDBCONFIG[$name] = $value;
+
+	foreach ( $LIBDBCONFIG as $key => $row ) {
+
+		switch ( $type = $row['type'] ) {
+		case 'bool':
+		case 'int':
+			if ( !preg_match('/^\s*(-){0,1}[0-9]+\s*$/', $row['value']) ) {
+				error("invalid type '$type' for config variable '$key'");
+			}
+			break;
+		case 'string':
+			if ( !is_string($row['value']) ) {
+				error("invalid type '$type' for config variable '$key'");
+			}
+			break;
+		case 'array_val':
+		case 'array_keyval':
+			if ( !is_array($row['value']) ) {
+				error("invalid type '$type' for config variable '$key'");
+			}
+			break;
+		default:
+			error("unknown type '$type' for config variable '$key'");
+		}
+
+		// CB: modified as the PHO version is 5.1.3 and does
+		// not support json_decode
+		if ( function_exists('json_decode') ) 
+			$val = json_encode($row['value']);
+		else
+			$val = $row['value'];
+		
+
+		if ( function_exists('json_last_error') ) {
+			switch ( json_last_error() ) {
+			case JSON_ERROR_NONE:
+				break;
+			case JSON_ERROR_DEPTH:
+				error("JSON config '$key' encode: maximum stack depth exceeded");
+			case JSON_ERROR_STATE_MISMATCH:
+				error("JSON config '$key' encode: underflow or the modes mismatch");
+			case JSON_ERROR_CTRL_CHAR:
+				error("JSON config '$key' encode: unexpected control character found");
+			case JSON_ERROR_SYNTAX:
+				error("JSON config '$key' encode: syntax error, malformed JSON");
+			/* Only available since PHP >= 5.3.3:
+			case JSON_ERROR_UTF8:
+				error("JSON config '$key' encode: malformed UTF-8 characters, possibly incorrectly encoded");
+			 */
+			default:
+				error("JSON config '$key' encode: unknown error");
+			}
+		} else {
+			if ( $val === NULL ) {
+				error("JSON config '$key' encode: unknown error");
+			}
+		}
+
+		$res = $DB->q('RETURNAFFECTED UPDATE configuration
+		               SET value = %s, type = %s, description = %s
+		               WHERE name = %s', $val, $row['type'], $row['desc'], $key);
+
+		if ( $res>0 ) auditlog('configuration', NULL, 'update '.$key, $val);
+	}
+}
+
+/**
+ * Query configuration variable, with optional default value in case
+ * the variable does not exist and boolean to indicate if cached
+ * values can be used.
+ */
+function dbconfig_get($name, $default = null, $cacheok = true)
+{
+	global $LIBDBCONFIG;
+	if ( (!isset($LIBDBCONFIG)) || (!$cacheok) ) {
+		dbconfig_init();
+	}
+
+	if ( isset($LIBDBCONFIG[$name]) ) return $LIBDBCONFIG[$name]['value'];
+
+	if ( $default===null ) {
+		error("Configuration variable '$name' not found.");
+	}
+	return $default;
 }

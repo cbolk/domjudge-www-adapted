@@ -1,5 +1,4 @@
 <?php
-/* $Id: use_db.php 3505 2010-12-16 19:17:55Z eldering $ */
 
 require('lib.database.php');
 
@@ -25,7 +24,10 @@ function setup_database_connection($privlevel)
 		if ( $credential{0} == '#' ) continue;
 		list ($priv, $host, $db, $user, $pass) =
 			explode(':', trim($credential));
-		if ($priv != $privlevel) continue;
+		if ( $priv=='team' || $priv=='public' ) {
+			user_error("Found obsolete database privilege:user '$priv:$user'", E_USER_WARNING);
+			continue;
+		}
 
 		$DB = new db ($db, $host, $user, $pass);
 		break;

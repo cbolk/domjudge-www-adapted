@@ -2,8 +2,6 @@
 /**
  * Common functions shared between team/public/jury interface
  *
- * $Id: common.php 3490 2010-12-05 16:06:01Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  * Modified by CBolk
@@ -13,12 +11,55 @@
 /* define('CIRCLE_SYM', '&#9679;'); */
 define('CIRCLE_SYM', '&#x25EF;');
 
+function parseRunDiff($difftext){
+	$line = strtok($difftext,"\n"); //first line
+	if(sscanf($line, "### DIFFERENCES FROM LINE %d ###\n", $firstdiff) != 1)
+		return htmlspecialchars($difftext);
+	$return = $line . "\n";
+
+	// Add second line 'team ? reference'
+	$line = strtok("\n");
+	$return .= $line . "\n";
+
+	// We determine the line number width from the '_' characters and
+	// the separator position from the character '?' on the second line.
+	$linenowidth = strrpos($line, '_') + 1;
+	$midloc = strpos($line, '?') - ($linenowidth+1);
+
+	$line = strtok("\n");
+	while(strlen($line) != 0){
+		$linenostr = substr($line, 0, $linenowidth);
+		$diffline = substr($line, $linenowidth+1);
+		$mid = substr($diffline, $midloc-1, 3);
+		switch($mid){
+			case ' = ':
+				$formdiffline = "<span class='correct'>".htmlspecialchars($diffline)."</span>";
+				break;
+			case ' ! ':
+				$formdiffline = "<span class='differ'>".htmlspecialchars($diffline)."</span>";
+				break;
+			case ' $ ':
+				$formdiffline = "<span class='endline'>".htmlspecialchars($diffline)."</span>";
+				break;
+			case ' > ':
+			case ' < ':
+				$formdiffline = "<span class='extra'>".htmlspecialchars($diffline)."</span>";
+				break;
+			default:
+				$formdiffline = htmlspecialchars($diffline);
+		}
+		$return = $return . $linenostr . " " . $formdiffline . "\n";
+		$line = strtok("\n");
+	}
+	return $return;
+}
+
 /**
  * Print a list of submissions, either all or only those that
  * match <key> = <value>. Output is always limited to the
  * current or last contest.
  */
-function putSubmissions($cdata, $restrictions, $limit = 0)
+function putSubmissions($cdata, $restrictions, $limit = 0, $highlight = null)
 {
 	global $DB;
 
@@ -37,6 +78,13 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 			$verifyclause = '(j.verified = 0 OR s.judgehost IS NULL) ';
 		}
 	}
+	if ( isset($restrictions['judged']) ) {
+		if ( $restrictions['judged'] ) {
+			$judgedclause = '(j.result IS NOT NULL) ';
+		} else {
+			$judgedclause = '(j.result IS NULL) ';
+		}
+	}
 
 	$sqlbody =
 		'FROM submission s
@@ -53,9 +101,10 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 	$res = $DB->q('SELECT s.submitid, s.teamid, s.probid, s.langid,
 					s.submittime, s.judgehost, s.valid, t.name AS teamname,
 					p.name AS probname, l.name AS langname,
-					j.result, j.judgehost, j.verified, j.verifier '
+					j.result, j.judgehost, j.verified, j.jury_member, j.seen '
 				  . $sqlbody
 				  . (isset($restrictions['verified'])  ? 'AND ' . $verifyclause : '')
+				  . (isset($restrictions['judged'])  ? 'AND ' . $judgedclause : '')
 				  .'ORDER BY s.submittime DESC, s.submitid DESC '
 				  . ($limit > 0 ? 'LIMIT 0, %i' : '%_')
 				, $cid, @$restrictions['teamid'], @$restrictions['probid']
@@ -64,14 +113,12 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 
 	// nothing found...
 	if( $res->count() == 0 ) {
-		echo "<p class=\"nodata\">No submissions</p>\n\n";
+		echo "<div>\n<p class=\"nodata\">No submissions</p>\n</div>\n\n";
 		return;
 	}
 
 	if ( IS_JURY ) {
-		echo addForm('submission.php') .
-		    '<p>Claim submissions for verification as ' .
-		    addVerifierSelect(@$_COOKIE['domjudge_lastverifier']) . "</p>\n";
+		echo addForm('submission.php');
 	}
 
 	// print the table with the submissions.
@@ -100,7 +147,8 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 		// present and valid.
 		if ( IS_JURY ) {
 			$link = ' href="submission.php?id=' . $sid . '"';
-		} elseif ( $row['result'] && $row['valid'] ) {
+		} elseif ( $row['result'] && $row['valid'] 	&&
+			           (!dbconfig_get('verification_required',0) || $row['verified']) ) {
 			$link = ' href="submission_details.php?id=' . $sid . '"';
 		} else {
 			$link = '';
@@ -115,6 +163,12 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 		} else {
 			$igncnt++;
 			echo ' sub_ignore';
+		}
+		if ( $sid == $highlight ) {
+			echo ' highlight';
+		}
+		if (!IS_JURY && !$row['seen'] ) {
+			echo ' unseen';
 		}
 		echo '">';
 
@@ -155,8 +209,8 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 			echo '</a>';
 		} else {
 			if ( ! $row['result'] ||
-			     ( VERIFICATION_REQUIRED && ! $row['verified'] ) ) {
-				if ( $row['submittime'] >= $cdata['endtime'] ) {
+			     ( dbconfig_get('verification_required', 0) && ! $row['verified'] ) ) {
+				if ( $row['submittime'] >= $cdata['endtime'] ) {			
 					echo "<a>" . printresult('too-late') . "</a>";
 				} else {
 					echo "<a>" . printresult('', TRUE) . "</a>";
@@ -173,7 +227,7 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 		else
 			$imgresult = $row['result'] .".png";
 			
-		echo "<td><img src='../images/" . $imgresult . "' style='vertical-align:text-bottom;' /></td>";
+		echo "<td class='tacenter'><img src='../images/" . $imgresult . "' style='vertical-align:text-bottom;' /></td>";
 
 		if ( IS_JURY ) {
 			echo "<td><a$link>";
@@ -186,21 +240,21 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 			echo '</a></td>';
 
 			// only display verification if we're done with judging
-			unset($verified, $verifier);
+			unset($verified, $jury_member);
 			$claim = FALSE;
 			if ( empty($row['result']) ) {
 				$verified = '&nbsp;';
-				$verifier = '&nbsp;';
+				$jury_member = '&nbsp;';
 			} else {
 				$verified = printyn($row['verified']);
-				if ( empty($row['verifier']) ) {
-					$verifier = '&nbsp;';
+				if ( empty($row['jury_member']) ) {
+					$jury_member = '&nbsp;';
 				} else {
-					$verifier = htmlspecialchars($row['verifier']);
+					$jury_member = htmlspecialchars($row['jury_member']);
 				}
 				if ( !$row['verified'] ) {
 					$vercnt++;
-					if ( empty($row['verifier']) ) {
+					if ( empty($row['jury_member']) ) {
 						$claim = TRUE;
 					} else {
 						$verified = 'viewing';
@@ -208,12 +262,16 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 				}
 			}
 
-			echo "<td><a$link>$verified</a></td><td>";
+			echo "<td><a$link>$verified</a></td><td class='tacenter'>";
 			if ( $claim ) {
 			    echo addSubmit('claim',
 				               'claim[' . htmlspecialchars($row['submitid']) . ']');
 			} else {
-			    echo "<a$link>$verifier</a>";
+				if ( !$row['verified'] && $jury_member==getJuryMember() ) {
+					echo "<a class='newbutton' href=\"submission.php?unclaim=1&amp;id=" . htmlspecialchars($row['submitid']) . "\">unclaim</a>";
+				} else {
+					echo "<a$link>$jury_member</a>";
+				}
 			}
 		}
 		echo "</td></tr>\n";
@@ -246,10 +304,16 @@ function putSubmissions($cdata, $restrictions, $limit = 0)
 					, $cid, @$restrictions['teamid'], @$restrictions['probid']
 					, @$restrictions['langid'], @$restrictions['judgehost']
 					);
+		$quecnt = $DB->q('VALUE SELECT count(s.submitid) ' . $sqlbody
+						.' AND result IS NULL'
+					, $cid, @$restrictions['teamid'], @$restrictions['probid']
+					, @$restrictions['langid'], @$restrictions['judgehost']
+					);
 		}
 		echo "<p>Total correct: $corcnt, submitted: $subcnt";
 		if($vercnt > 0)	echo ", unverified: $vercnt";
 		if($igncnt > 0) echo ", ignored: $igncnt";
+		if($quecnt > 0) echo ", judgement pending: $quecnt";
 		echo "</p>\n\n";
 	}
 
@@ -334,6 +398,13 @@ function putClock() {
 	// timediff to end of contest
 	if ( strcmp(now(), $cdata['starttime']) >= 0 && strcmp(now(), $cdata['endtime']) < 0) {
 		$left = strtotime($cdata['endtime'])-time();
+		$what = "time left:";
+	}
+	if ( strcmp(now(), $cdata['activatetime']) >= 0 && strcmp(now(), $cdata['starttime']) < 0) {
+		$left = strtotime($cdata['starttime'])-time();
+		$what = "time to start: ";
+	}
+	if ( !empty($left) ) {
 		$fmt = '';
 		if ( $left > 24*60*60 ) {
 			$d = floor($left/(24*60*60));
@@ -386,14 +457,15 @@ function checkFileUpload($errorcode) {
 			error('The uploaded file was only partially uploaded.');
 		case UPLOAD_ERR_NO_FILE:
 			error('No file was uploaded.');
-		case 6:	// UPLOAD_ERR_NO_TMP_DIR, constant doesn't exist in our minimal PHP version
+		case UPLOAD_ERR_NO_TMP_DIR:
 			error('Missing a temporary folder. Contact staff.');
-		case 7: // UPLOAD_ERR_CANT_WRITE
+		case UPLOAD_ERR_CANT_WRITE:
 			error('Failed to write file to disk. Contact staff.');
-		case 8: // UPLOAD_ERR_EXTENSION
+		case UPLOAD_ERR_EXTENSION:
 			error('File upload stopped by extension. Contact staff.');
 		default:
-			error('Unknown error while uploading: '. $_FILES['code']['error'] .
+			error('Unknown error while uploading (' . $errorcode . '): ' . $_FILES['code']['error'] .
 				'. Contact staff.');
 	}
+
 }

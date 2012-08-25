@@ -34,7 +34,12 @@ if ( IS_ADMIN && isset($_POST['donow']) ) {
 $title = 'Contests';
 require(LIBWWWDIR . '/header.php');
 
-echo "<h1>List of contests</h1>\n\n";
+
+echo "<h1><div class='fleft'>List of contests</div>&nbsp;\n";
+if ( IS_ADMIN ) {
+	echo "<div class='fright'>" . addLink('contest') ."</div>\n\n";
+}
+echo "</h1>";
 
 if ( isset($_GET['edited']) ) {
 
@@ -193,8 +198,5 @@ if( count($res) == 0 ) {
 	echo "</tbody>\n</table>\n</form>\n\n";
 }
 
-if ( IS_ADMIN ) {
-	echo "<p>" . addLink('contest') . "</p>\n\n";
-}
 
 require(LIBWWWDIR . '/footer.php');

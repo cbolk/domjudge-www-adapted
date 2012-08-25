@@ -113,10 +113,10 @@ function addSubmit($value, $name = null, $onclick = null, $enable = true) {
 }
 /**
  * Form reset button, $value = caption
+ */
 function addReset($value) {
 	return addInputField('reset', null, $value);
 }
- */
 
 /**
  * Textarea form element.

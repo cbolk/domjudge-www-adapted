@@ -202,13 +202,13 @@ if ( isset($jid) )  {
 
 		echo "<p>Claimed: " .
 		    "<strong>" . printyn(!empty($jud['verifier'])) . "</strong>";
-		if ( empty($jud['verifier']) ) {
+		if ( empty($jud['jury_member']) ) {
 			echo '; ';
 		} else {
-			echo ', by ' . htmlspecialchars($jud['verifier']) . '; ' .
+			echo ', by ' . htmlspecialchars($jud['jury_member']) . '; ' .
 			    addSubmit('unclaim', 'unclaim') . ' or ';
 		}
-		echo addSubmit('claim', 'claim') . ' as ' . addVerifierSelect($lastverifier) .
+		echo addSubmit('claim', 'claim') .
 		    addEndForm();
 	}
 
@@ -255,7 +255,7 @@ if ( isset($jid) )  {
 	// Time (start, end, used)
 	echo "<p class=\"judgetime\">Judging started: " . htmlspecialchars($jud['starttime']);
 
-	$unix_start = strtotime($jud['starttime']);
+$unix_start = strtotime($jud['starttime']);
 	if ( $judging_ended ) {
 		echo ', ended: ' . htmlspecialchars($jud['endtime']) .
 			' (judging took '.
@@ -269,7 +269,7 @@ if ( isset($jid) )  {
 
 	echo "<h3 id=\"compile\">Compilation output</h3>\n\n";
 
-	if ( @$jud['output_compile'] ) {
+	if ( strlen(@$jud['output_compile']) > 0 ) {
 		echo "<pre class=\"output_text\">".
 			htmlspecialchars($jud['output_compile'])."</pre>\n\n";
 	} elseif ( $jud['output_compile']===NULL ) {
@@ -277,7 +277,7 @@ if ( isset($jid) )  {
 	} else {
 		echo "<p class=\"nodata\">There were no compiler errors or warnings.</p>\n";
 	}
-
+	
 	// If compilation failed, there's no more info to show, so stop here
 	if ( @$jud['result']=='compiler-error' ) {
 		require(LIBWWWDIR . '/footer.php');
@@ -313,7 +313,12 @@ if ( isset($jid) )  {
 		}
 	}
 
-	echo "<h3 id=\"testcases\">Testcase runs</h3>\n\n";
+echo "<h3 id=\"testcases\">Testcase runs " .
+	    ( $lastjud === NULL ? '' :
+	      "<span style=\"font-size:xx-small;\">" .
+	      "<a href=\"javascript:togglelastruns();\">show/hide results of previous</a> " .
+	      "<a href=\"submission.php?id=$lastsubmitid\">submission s$lastsubmitid</a></span>" ) .
+	    "</h3>\n\n";
 
 	echo "<table class=\"list\">\n<thead>\n" .
 		"<tr><th scope=\"col\">#</th><th scope=\"col\">runtime</th>" .
@@ -328,7 +333,7 @@ if ( isset($jid) )  {
 	echo "<th scope=\"col\">description</th>" .
 	    "</tr>\n</thead>\n<tbody>\n";
 
-	foreach ( $runinfo as $run ) {
+	foreach ( $runinfo as $key => $run ) {
 		$link = '#run-' . $run['rank'];
 		echo "<tr><td><a href=\"$link\">$run[rank]</a></td>".
 		    "<td><a href=\"$link\">$run[runtime]</a></td>" .
@@ -341,7 +346,7 @@ if ( isset($jid) )  {
 		default:
 			echo 'sol_incorrect';
 		}
-		echo "\">$run[runresult]</span></a></td>" ;
+		echo "\">$run[runresult]</span></a></td>";
 		if ( $lastjud !== NULL ) {
 			$lastrun = $lastruninfo[$key];
 			if ( $lastjud['result']=='compiler-error' ) $lastrun['runresult'] = 'compiler-error';
@@ -351,7 +356,8 @@ if ( isset($jid) )  {
 				"<span class=\"sol prevsubmit\">$lastrun[runresult]</span></a></td>";
 		}
 
-		echo "<td><a href=\"$link\">" .		    htmlspecialchars(str_cut($run['description'],20)) . "</a></td>" .
+		echo "<td><a href=\"$link\">" .
+		    htmlspecialchars(str_cut($run['description'],20)) . "</a></td>" .
 			"</tr>\n";
 	}
 	echo "</tbody>\n</table>\n\n";
@@ -421,4 +427,3 @@ togglelastruns();
 // We're done!
 
 require(LIBWWWDIR . '/footer.php');
-

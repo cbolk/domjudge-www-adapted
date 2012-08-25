@@ -3,8 +3,6 @@
  * Request a yet unjudged submission from the database, judge it, and pass
  * the results back in to the database.
  *
- * $Id: judgedaemon.main.php 3356 2010-08-19 19:08:33Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -12,44 +10,67 @@ if ( isset($_SERVER['REMOTE_ADDR']) ) die ("Commandline use only");
 
 require(ETCDIR . '/judgehost-config.php');
 
-// Set environment variables for passing path configuration to called programs
-putenv('DJ_BINDIR='      . BINDIR);
-putenv('DJ_ETCDIR='      . ETCDIR);
-putenv('DJ_JUDGEDIR='    . JUDGEDIR);
-putenv('DJ_LIBDIR='      . LIBDIR);
-putenv('DJ_LIBJUDGEDIR=' . LIBJUDGEDIR);
-putenv('DJ_LOGDIR='      . LOGDIR);
-
-// Set other configuration variables for called programs
-putenv('RUNUSER='       . RUNUSER);
-putenv('USE_CHROOT='    . (USE_CHROOT ? '1' : ''));
-putenv('CHROOT_SCRIPT=' . CHROOT_SCRIPT);
-putenv('COMPILETIME='   . COMPILETIME);
-putenv('MEMLIMIT='      . MEMLIMIT);
-putenv('FILELIMIT='     . FILELIMIT);
-putenv('PROCLIMIT='     . PROCLIMIT);
-
-foreach ( $EXITCODES as $code => $name ) {
-	$var = 'E_' . strtoupper(str_replace('-','_',$name));
-	putenv($var . '=' . $code);
-}
-
 $waittime = 5;
 
 $myhost = trim(`hostname | cut -d . -f 1`);
 
 define ('SCRIPT_ID', 'judgedaemon');
 define ('LOGFILE', LOGDIR.'/judge.'.$myhost.'.log');
+define ('PIDFILE', RUNDIR.'/judgedaemon.pid');
 
 require(LIBDIR . '/init.php');
 
-setup_database_connection('jury');
+function usage()
+{
+	echo "Usage: " . SCRIPT_ID . " [OPTION]...\n" .
+	    "Start the judgedaemon.\n\n" .
+	    "  -d       daemonize after startup\n" .
+	    "  -v       set verbosity to LEVEL (syslog levels)\n" .
+	    "  -h       display this help and exit\n" .
+	    "  -V       output version information and exit\n\n";
+	exit;
+}
+
+$options = getopt("dv:hV");
+// With PHP version >= 5.3 we can also use long options.
+// FIXME: getopt doesn't return FALSE on parse failure as documented!
+if ( $options===FALSE ) {
+	echo "Error: parsing options failed.\n";
+	usage();
+}
+if ( isset($options['d']) ) $options['daemon']  = $options['d'];
+if ( isset($options['v']) ) $options['verbose'] = $options['v'];
+
+if ( isset($options['V']) ) version();
+if ( isset($options['h']) ) usage();
+
+setup_database_connection();
 
 $verbose = LOG_INFO;
+if ( isset($options['verbose']) ) $verbose = $options['verbose'];
+
 if ( DEBUG & DEBUG_JUDGE ) {
 	$verbose = LOG_DEBUG;
 	putenv('DEBUG=1');
 }
+
+// Set static environment variables for passing path configuration
+// to called programs:
+putenv('DJ_BINDIR='      . BINDIR);
+putenv('DJ_ETCDIR='      . ETCDIR);
+putenv('DJ_JUDGEDIR='    . JUDGEDIR);
+putenv('DJ_LIBDIR='      . LIBDIR);
+putenv('DJ_LIBJUDGEDIR=' . LIBJUDGEDIR);
+putenv('DJ_LOGDIR='      . LOGDIR);
+putenv('RUNUSER='        . RUNUSER);
+
+foreach ( $EXITCODES as $code => $name ) {
+	$var = 'E_' . strtoupper(str_replace('-','_',$name));
+	putenv($var . '=' . $code);
+}
+
+// Pass SYSLOG variable via environment for compare program
+if ( defined('SYSLOG') && SYSLOG ) putenv('DJ_SYSLOG=' . SYSLOG);
 
 system("pgrep -u ".RUNUSER, $retval);
 if ($retval == 0) {
@@ -67,6 +88,8 @@ if ( version_compare(PHP_VERSION, '5.3', '<' ) ) {
 	declare(ticks = 1);
 }
 initsignals();
+
+if ( isset($options['daemon']) ) daemonize(PIDFILE);
 
 database_retry_connect($waittime);
 
@@ -97,6 +120,19 @@ while( !$exitsignalled )
 		}
 		throw $e;
 	}
+}
+
+// If there are any unfinished judgings in the queue in my name,
+// they will not be finished. Give them back.
+$res = $DB->q('SELECT judgingid, submitid FROM judging WHERE
+               judgehost = %s AND endtime IS NULL AND valid = 1', $myhost);
+while ( $jud = $res->next() ) {
+	$DB->q('UPDATE judging SET valid = 0 WHERE judgingid = %i',
+	       $jud['judgingid']);
+	$DB->q('UPDATE submission SET judgehost = NULL, judgemark = NULL
+	        WHERE submitid = %i', $jud['submitid']);
+	logmsg(LOG_WARNING, "Found unfinished judging j" . $jud['judgingid'] . " in my name; given back");
+	auditlog('judging', $jud['judgingid'], 'given back', null, $myhost);
 }
 
 // Create directory where to test submissions
@@ -149,8 +185,8 @@ while ( TRUE ) {
 		$waiting = FALSE;
 	}
 
-	$contdata = getCurContest(TRUE);
-	$newcid = $contdata['cid'];
+	$cdata = getCurContest(TRUE);
+	$newcid = $cdata['cid'];
 	$oldcid = $cid;
 	if ( $oldcid !== $newcid ) {
 		logmsg(LOG_NOTICE, "Contest has changed from " .
@@ -181,65 +217,92 @@ while ( TRUE ) {
 	// first prevents a write-lock on the submission table if nothing is
 	// to be judged, and also prevents throwing away the query cache every
 	// single time
-	$numopen = $DB->q('VALUE SELECT COUNT(*) FROM submission
-	                   WHERE judgehost IS NULL AND cid = %i AND langid IN (%As)
-	                   AND probid IN (%As) AND submittime < %s AND valid = 1',
-	                  $cid, $judgable_lang, $judgable_prob, $contdata['endtime']);
+		$numopen = $DB->q('VALUE SELECT COUNT(*) FROM submission
+		                   WHERE judgemark IS NULL AND cid = %i AND langid IN (%As)
+		                   AND probid IN (%As) AND submittime < %s AND valid = 1',
+		                  $cid, $judgable_lang, $judgable_prob, $cdata['endtime']);
 
-	$numupd = 0;
-	if ($numopen) {
-		// Generate (unique) random string to mark submission to be judged
-		list($usec, $sec) = explode(" ", microtime());
-		$mark = $myhost.'@'.($sec+$usec).'#'.uniqid( mt_rand(), true );
+		$numupd = 0;
+		if ( $numopen ) {
+			// Prioritize teams according to last judging time
+			$submitid = $DB->q('MAYBEVALUE SELECT submitid
+			                    FROM submission s
+			                    LEFT JOIN team t ON (s.teamid = t.login)
+			                    WHERE judgemark IS NULL AND cid = %i
+	 		                    AND langid IN (%As) AND probid IN (%As)
+	 		                    AND submittime < %s AND valid = 1
+			                    ORDER BY judging_last_started ASC, submittime ASC
+			                    LIMIT 1',
+			                   $cid, $judgable_lang, $judgable_prob,
+			                   $cdata['endtime']);
 
-		// update exactly one submission with our random string
-		// Note: this might still return 0 if another judgehost beat
-		// us to it
-		$numupd = $DB->q('RETURNAFFECTED UPDATE submission
-				  SET judgehost = %s, judgemark = %s
-				  WHERE judgehost IS NULL AND cid = %i AND langid IN (%As)
-				  AND probid IN (%As) AND submittime < %s AND valid = 1
-				  LIMIT 1',
-				 $myhost, $mark, $cid, $judgable_lang, $judgable_prob,
-				 $contdata['endtime']);
-	}
+			if ( $submitid ) {
+				// Generate (unique) random string to mark submission to be judged
+				list($usec, $sec) = explode(" ", microtime());
+				$mark = $myhost.'@'.($sec+$usec).'#'.uniqid( mt_rand(), true );
 
-	// nothing updated -> no open submissions
-	if ( $numupd == 0 ) {
-		if ( ! $waiting ) {
-			logmsg(LOG_INFO, "No submissions in queue, waiting...");
-			$waiting = TRUE;
+				// update exactly one submission with our random string
+				// Note: this might still return 0 if another judgehost beat
+				// us to it
+				$numupd = $DB->q('RETURNAFFECTED UPDATE submission
+				                  SET judgehost = %s, judgemark = %s
+				                  WHERE submitid = %i AND judgemark IS NULL',
+				                 $myhost, $mark, $submitid);
+			}
+			// Another judgedaemon beat us to claim this submission, but
+			// there are more left: immediately restart loop without sleeping.
+			if ( $numupd == 0 && $numopen > 1 ) continue;
 		}
-		sleep($waittime);
-		continue;
-	}
 
-	// we have marked a submission for judging
-	$waiting = FALSE;
+		// nothing updated -> no open submissions
+		if ( $numupd == 0 ) {
+			if ( ! $waiting ) {
+				logmsg(LOG_INFO, "No submissions in queue, waiting...");
+				$waiting = TRUE;
+			}
+			sleep($waittime);
+			continue;
+		}
 
-	// get maximum runtime, source code and other parameters
-	$row = $DB->q('TUPLE SELECT CEILING(time_factor*timelimit) AS maxruntime,
-	               s.submitid, s.sourcecode, s.langid, s.teamid, s.probid,
-	               p.special_run, p.special_compare, l.extension
-	               FROM submission s, problem p, language l
-	               WHERE s.probid = p.probid AND s.langid = l.langid AND
-	               judgemark = %s AND judgehost = %s', $mark, $myhost);
+		// we have marked a submission for judging
+		$waiting = FALSE;
 
-	// update the judging table with our ID and the starttime
-	$judgingid = $DB->q('RETURNID INSERT INTO judging (submitid,cid,starttime,judgehost)
-	                     VALUES (%i,%i,%s,%s)', $row['submitid'], $cid, now(), $myhost);
+		// get maximum runtime and other parameters
+		$row = $DB->q('TUPLE SELECT CEILING(time_factor*timelimit) AS maxruntime,
+		               s.submitid, s.langid, s.teamid, s.probid,
+		               p.special_run, p.special_compare
+		               FROM submission s, problem p, language l
+		               WHERE s.probid = p.probid AND s.langid = l.langid AND
+		               judgemark = %s AND judgehost = %s', $mark, $myhost);
 
-	logmsg(LOG_NOTICE, "Judging submission s$row[submitid] ".
-	       "($row[teamid]/$row[probid]/$row[langid]), id j$judgingid...");
+		// update the judging table with our ID and the starttime
+		$now = now();
+		$judgingid = $DB->q('RETURNID INSERT INTO judging (submitid,cid,starttime,judgehost)
+		                     VALUES (%i,%i,%s,%s)', $row['submitid'], $cid, $now, $myhost);
+		// also update team's last judging start
+		$DB->q('UPDATE team SET judging_last_started = %s WHERE login = %s',
+		       $now, $row['teamid']);
 
-	judge($mark, $row, $judgingid);
+		logmsg(LOG_NOTICE, "Judging submission s$row[submitid] ".
+		       "($row[teamid]/$row[probid]/$row[langid]), id j$judgingid...");
 
-	// restart the judging loop
+		judge($mark, $row, $judgingid);
+
+		// restart the judging loop
 }
 
 function judge($mark, $row, $judgingid)
 {
 	global $EXITCODES, $DB, $cid, $myhost, $workdirpath;
+
+	// Set configuration variables for called programs
+	// Call dbconfig_init() to prevent using cached values.
+	dbconfig_init();
+	putenv('USE_CHROOT='    . (USE_CHROOT ? '1' : ''));
+	putenv('COMPILETIME='   . dbconfig_get('compile_time'));
+	putenv('MEMLIMIT='      . dbconfig_get('memory_limit'));
+	putenv('FILELIMIT='     . dbconfig_get('filesize_limit'));
+	putenv('PROCLIMIT='     . dbconfig_get('process_limit'));
 
 	// create workdir for judging
 	$workdir = "$workdirpath/c$cid-s$row[submitid]-j$judgingid";
@@ -259,17 +322,21 @@ function judge($mark, $row, $judgingid)
 	system("mkdir -p '$workdir/compile'", $retval);
 	if ( $retval != 0 ) error("Could not create '$workdir/compile'");
 
-	// Get the source code from the DB and store in a file
-	$srcfile = "$workdir/compile/source.$row[extension]";
-	if ( file_put_contents($srcfile, $row['sourcecode']) === FALSE ) {
-		error("Could not create $srcfile");
+	// Get the source code from the DB and store in local file(s)
+	$sources = $DB->q('KEYTABLE SELECT rank AS ARRAYKEY, sourcecode, filename
+	                   FROM submission_file WHERE submitid = %i', $row['submitid']);
+	$files = array();
+	foreach ( $sources as $rank => $source ) {
+		$srcfile = "$workdir/compile/$source[filename]";
+		$files[] = "'$source[filename]'";
+		if ( file_put_contents($srcfile, $source['sourcecode']) === FALSE ) {
+			error("Could not create $srcfile");
+		}
 	}
-	unset($row['sourcecode']);
-
 
 	// Compile the program.
-	system(LIBJUDGEDIR . "/compile.sh $row[extension] $row[langid] " .
-	       "'$workdir'", $retval);
+	system(LIBJUDGEDIR . "/compile.sh $row[langid] '$workdir' " .
+	       implode(' ', $files), $retval);
 
 	// what does the exitcode mean?
 	if( ! isset($EXITCODES[$retval]) ) {
@@ -286,16 +353,24 @@ function judge($mark, $row, $judgingid)
 	// FIXME(?): result is still returned as in EXITCODES.
 	if ( ($result = $EXITCODES[$retval])=='correct' ) {
 
-	// CB Modified to manage input from files
 	logmsg(LOG_DEBUG, "Fetching testcases from database");
 	$testcases = $DB->q("KEYTABLE SELECT rank AS ARRAYKEY,
- 	                     testcaseid, md5sum_input, md5sum_output, ifile, ofile, probid, rank
+ 	                     testcaseid, md5sum_input, md5sum_output, probid, rank
 	                     FROM testcase WHERE probid = %s ORDER BY rank", $row['probid']);
 	if ( count($testcases)==0 ) {
 		error("No testcase found for problem " . $row['probid']);
 	}
 
 	$runresults = array_fill_keys(array_keys($testcases), NULL);
+	$results_remap = dbconfig_get('results_remap');
+
+	// Optionally create chroot environment
+	if ( USE_CHROOT && CHROOT_SCRIPT ) {
+		logmsg(LOG_INFO, "executing chroot script: '".CHROOT_SCRIPT." start'");
+		chdir($workdir);
+		system(LIBJUDGEDIR.'/'.CHROOT_SCRIPT.' start', $retval);
+		if ( $retval!=0 ) error("chroot script exited with exitcode $retval");
+	}
 
 	foreach ( $testcases as $tc ) {
 
@@ -304,24 +379,13 @@ function judge($mark, $row, $judgingid)
 
 	// Get both in- and output files, only if we didn't have them already.
 	$tcfile = array();
-	$tciofile = array();
-	$fname = array();
-	$programinout = array();
 	foreach(array('input','output') as $inout) {
 		$tcfile[$inout] = "$workdirpath/testcase/testcase.$tc[probid].$tc[rank]." .
 		    $tc['md5sum_'.$inout] . "." . substr($inout, 0, -3);
-		//input/output file: testcase.#prob.#rank.file.in or testcase.#prob.#rank.file.out
-		$tciofile[$inout] = "$workdirpath/testcase/testcase.$tc[probid].$tc[rank].file.". substr($inout, 0, -3);
-		$iofile = substr($inout, 0, 1) . "file"; 
+
 		if ( !file_exists($tcfile[$inout]) ) {
-			$content = $DB->q("VALUE SELECT $inout FROM testcase
+			$content = $DB->q("VALUE SELECT SQL_NO_CACHE $inout FROM testcase
 	 		                   WHERE testcaseid = %i", $tc['testcaseid']);
-	 		$filename = $DB->q("VALUE SELECT $iofile FROM testcase
-	 		                   WHERE testcaseid = %i", $tc['testcaseid']);
-	 		if($filename != NULL && $filename != "") $fname[$inout] = $filename;
-	 		//CBolk: managing input from file
-			logmsg(LOG_NOTICE, "gathering new data for testcases .. ");
-	 		// standard input / output, from stdin
 			if ( file_put_contents($tcfile[$inout] . ".new", $content) === FALSE ) {
 				error("Could not create $tcfile[$inout].new");
 			}
@@ -331,59 +395,27 @@ function judge($mark, $row, $judgingid)
 			} else {
 				error("File corrupted during download.");
 			}
-	 		if($fname[$inout] == NULL || $fname[$inout] == ""){
-				$programinout[$inout] = $tcfile[$inout];
-			} else {
-				// CBolk: there is the name of the file to be provided in input
-				// the name of the file MUST be the content of testdata.in provided in input
-				// 
-				// the name of the file containing the actual data
-				if ( file_put_contents($tciofile[$inout], "./" . $fname[$inout] . "\n") === FALSE ) {
-					error("Could not create $tciofile[$inout]");
-				}
-				$programinout[$inout] = $tciofile[$inout];				
-			}
 			logmsg(LOG_NOTICE, "Fetched new $inout testcase $tc[rank] for " .
-				   "problem $row[probid] and $filename. program input is $programinout[$inout].");
-		} else {
-			// the file is already there
-	 		$filename = $DB->q("VALUE SELECT $iofile FROM testcase
-	 		                   WHERE testcaseid = %i", $tc['testcaseid']);
-	 		if($filename != NULL && $filename != "") $fname[$inout] = $filename;
-			if( file_exists($tciofile[$inout]) ) 
-				$programinout[$inout] = $tciofile[$inout];
-			else 
-				$programinout[$inout] = $tcfile[$inout];
-			logmsg(LOG_DEBUG, "testcase '$programinout[$inout]' exists ... " .$filename);
+			       "problem $row[probid]");
 		}
-		logmsg(LOG_DEBUG, "testcase '$tcfile[$inout]' available");
 		// sanity check (NOTE: performance impact is negligible with 5
 		// testcases and total 3.3 MB of data)
 		if ( md5_file($tcfile[$inout]) != $tc['md5sum_' . $inout] ) {
-			error("File corrupted: md5sum mismatch: " . $tcfile[$inout] . " > " .md5_file($tcfile[$inout])  );
+			error("File corrupted: md5sum mismatch: " . $tcfile[$inout]);
 		}
 	}
 
 	// Copy program with all possible additional files to testcase
 	// dir. Use hardlinks to preserve space with big executables.
-	system("mkdir -p '$testcasedir'", $retval);
-	if ( $retval!=0 ) error("Could not create directory '$testcasedir'");
+	$programdir = $testcasedir . '/execdir';
+	system("mkdir -p '$programdir'", $retval);
+	if ( $retval!=0 ) error("Could not create directory '$programdir'");
 
-	system("cp -dpRl '$workdir'/compile/* '$testcasedir'", $retval);
-	if ( $retval!=0 ) error("Could not copy program to '$testcasedir'");
-
-	if(file_exists($tciofile['input'])){
-		logmsg(LOG_DEBUG, "copying   " . $tcfile['input'] . " in  " . $testcasedir . "/" . $fname['input']);
-		system("cp -dpRl " . $tcfile['input'] . "  " . $testcasedir . "/" . $fname['input'], $retval);
-		if ( $retval!=0 ) error("Could not copy program to '$testcasedir'");
-	}
-
+	system("cp -pPRl '$workdir'/compile/* '$programdir'", $retval);
+	if ( $retval!=0 ) error("Could not copy program to '$programdir'");
 
 	// do the actual test-run
-	logmsg(LOG_DEBUG, "/testcase_run.sh $programinout[input] $programinout[output] " .
-	       "$row[maxruntime] '$testcasedir' " .
-	       "'$row[special_run]' '$row[special_compare]'");
-	system(LIBJUDGEDIR . "/testcase_run.sh $programinout[input] $programinout[output] " .
+	system(LIBJUDGEDIR . "/testcase_run.sh $tcfile[input] $tcfile[output] " .
 	       "$row[maxruntime] '$testcasedir' " .
 	       "'$row[special_run]' '$row[special_compare]'", $retval);
 
@@ -401,6 +433,13 @@ function judge($mark, $row, $judgingid)
 		$runtime = getFileContents($testcasedir . '/program.time');
 	}
 
+	// Apply any result remapping
+	if ( array_key_exists($runresults[$tc['rank']], $results_remap) ) {
+		logmsg(LOG_INFO, "Testcase $tc[rank] remapping result " . $runresults[$tc['rank']] .
+		                 " -> " . $results_remap[$runresults[$tc['rank']]]);
+		$runresults[$tc['rank']] = $results_remap[$runresults[$tc['rank']]];
+	}
+
 	$DB->q('INSERT INTO judging_run (judgingid, testcaseid, runresult,
  	        runtime, output_run, output_diff, output_error)
 	        VALUES (%i, %i, %s, %f, %s, %s, %s)',
@@ -415,6 +454,14 @@ function judge($mark, $row, $judgingid)
 	if ( ($result = getFinalResult($runresults))!==NULL ) break;
 
 	} // end: for each testcase
+
+	// Optionally destroy chroot environment
+	if ( USE_CHROOT && CHROOT_SCRIPT ) {
+		logmsg(LOG_INFO, "executing chroot script: '".CHROOT_SCRIPT." stop'");
+		chdir($workdir);
+		system(LIBJUDGEDIR.'/'.CHROOT_SCRIPT.' stop', $retval);
+		if ( $retval!=0 ) error("chroot script exited with exitcode $retval");
+	}
 
 	} // end: if compile result==0
 
@@ -433,24 +480,31 @@ function judge($mark, $row, $judgingid)
 
 	// log to event table if no verification required
 	// (case of verification required is handled in www/jury/verify.php)
-	if ( ! VERIFICATION_REQUIRED ) {
+	if ( ! dbconfig_get('verification_required', 0) ) {
 		$DB->q('INSERT INTO event (eventtime, cid, teamid, langid, probid,
 		                           submitid, judgingid, description)
 		        VALUES(%s, %i, %s, %s, %s, %i, %i, "problem judged")',
 		       now(), $cid, $row['teamid'], $row['langid'], $row['probid'],
 		       $row['submitid'], $judgingid);
+		if ( $result == 'correct' ) {
+			$DB->q('INSERT INTO balloon (submitid)
+			        VALUES(%i)',
+			        $row['submitid']);
+		} 
 	}
 
 	$DB->q('COMMIT');
 
 	// done!
 	logmsg(LOG_NOTICE, "Judging s$row[submitid]/j$judgingid finished, result: $result");
+	auditlog('judging', $judgingid, 'judged', $result, $myhost);
 	if ( $result == 'correct' ) {
 		alert('accept');
 	} else {
 		alert('reject');
 	}
 }
+
 
 function database_retry_connect()
 {

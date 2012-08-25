@@ -2,10 +2,10 @@
 /**
  * Display the clarification responses
  *
- * $Id: clarifications.php 3149 2010-02-27 12:32:04Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
+ *
+ * CB: not existing in the original new version
  */
 
 require('init.php');
@@ -14,17 +14,16 @@ $ajaxtitle = 'Clarifications';
 $title = $ajaxtitle.($nunread_clars ? ' ('.$nunread_clars.' new)' : '');
 require(LIBWWWDIR . '/header.php');
 
+
+echo "<h1>clarifications for ".htmlspecialchars($teamdata['name']). "<div class='fright'><a href=\"clarification.php\" class=\"minibutton btn-editprofile\">Request New Clarification</a></div></h1>\n\n";
+
 // Put overview of team submissions (like scoreboard)
 echo "<div id=\"teamscoresummary\">\n";
 putTeamRow($cdata, $login);
 echo "</div>\n";
 
-echo "<h1>Clarifications team " . htmlspecialchars($teamdata['name']) ."</h1>\n\n";
-
-echo "<p><a href=\"clarification.php\">Request Clarification</a></p>\n";
-
-echo "<p><a href=\"#clarifications\">View Clarifications</a></p>\n";
-echo "<p><a href=\"#requests\">View Clarification Requests</a></p>\n\n";
+//echo "<li><a href=\"#clarifications\" class=\"minibutton btn-editprofile\">Answers</a></li>\n";
+//echo "<li><a href=\"#requests\" class=\"minibutton btn-editprofile\">Requests</a></li></ul>\n\n";
 
 $requests = $DB->q('SELECT * FROM clarification
                     WHERE cid = %i AND sender = %s
@@ -39,7 +38,7 @@ $clarifications = $DB->q('SELECT c.*, u.type AS unread FROM clarification c
                           $login, $cid, $login);
 
 echo '<h3><a name="clarifications"></a>' .
-	"Clarifications:</h3>\n";
+	"received clarifications:</h3>\n";
 if ( $clarifications->count() == 0 ) {
 	echo "<p class=\"nodata\">No clarifications.</p>\n\n";
 } else {
@@ -47,7 +46,7 @@ if ( $clarifications->count() == 0 ) {
 }
 
 echo '<h3><a name="requests"></a>' .
-	"Clarification Requests:</h3>\n";
+	"requested clarifications:</h3>\n";
 if ( $requests->count() == 0 ) {
 	echo "<p class=\"nodata\">No clarification requests.</p>\n\n";
 } else {

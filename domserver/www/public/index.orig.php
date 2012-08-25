@@ -1,9 +1,9 @@
 <?php
-
-
 /**
- * Switch a user to the right site based on whether they can be
- * authenticated as team, jury, or nothing (public).
+ * Produce a total score. Call with parameter 'static' for
+ * output suitable for static HTML pages.
+ *
+ * $Id: index.php 3209 2010-06-12 00:13:43Z eldering $
  *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
@@ -13,29 +13,15 @@ require('init.php');
 $title="Scoreboard";
 // set auto refresh
 $refresh="30;url=./";
-
-// parse filter options
-$filter = array();
-if ( !isset($_GET['clear']) ) {
-	foreach( array('affilid', 'country', 'categoryid') as $type ) {
-		if ( !empty($_GET[$type]) ) $filter[$type] = $_GET[$type];
-	}
-	if ( count($filter) ) $refresh .= '?' . http_build_query($filter);
-}
-
 $menu = false;
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/scoreboard.php');
 
 $isstatic = @$_SERVER['argv'][1] == 'static' || isset($_REQUEST['static']);
 
-if ( ! $isstatic ) {
-	echo "<div id=\"menutopright\">\n";
-	putClock();
-	echo "</div>\n";
-}
+if ( ! $isstatic ) putClock();
 
 // call the general putScoreBoard function from scoreboard.php
-putScoreBoard($cdata, null, $isstatic, $filter);
+putScoreBoard(getCurContest(TRUE), null, $isstatic);
 
 require(LIBWWWDIR . '/footer.php');

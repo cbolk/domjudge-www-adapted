@@ -6,11 +6,11 @@ echo "<li iconmoon='&#x2a;'><a target=\"_top\" href=\"problem_detail.php\" acces
 echo "<li iconmoon='&#x23;'><a target=\"_top\" href=\"index.php\" accesskey=\"s\" title='Submissions'>submissions</a></li>\n";
 
 if ( $nunread_clars > 0 ) {
-	echo '<li iconmoon="&#x21;"><a target="_top" class="new" href="clarifications.php" ' .
+	echo '<li iconmoon="&#x33;"><a target="_top" class="new" href="clarifications.php" ' .
 		'accesskey="c" id="menu_clarifications">clarifications (' .
 		$nunread_clars . " new)</a></li>\n";
 } else {
-	echo '<li iconmoon="&#x21;"><a target="_top" href="clarifications.php" ' .
+	echo '<li iconmoon="&#x33;"><a target="_top" href="clarifications.php" ' .
 		"accesskey=\"c\" id=\"menu_clarifications\">clarifications</a></li>\n";
 }
 

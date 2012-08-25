@@ -1,104 +1,90 @@
 <?php
 /**
- * Web submissions form
- *
- * $Id: websubmit.php 3490 2010-12-05 16:06:01Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
+ *
+ * CB: not existing in the original new version
  */
 
 require('init.php');
 
-if ( ! ENABLE_WEBSUBMIT_SERVER ) {
-	error("Websubmit disabled.");
-}
-
 $title = 'Submit';
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/forms.php');
+$refreshtime = 30;
 
-if ( is_null($cid) ) {
-	echo "<p class=\"nodata\">No active contest</p>\n";
-	require(LIBWWWDIR . '/footer.php');
-	exit;
-}
-if ( difftime($cdata['starttime'], now()) > 0 ) {
-	echo "<p class=\"nodata\">Contest has not yet started.</p>\n";
-	require(LIBWWWDIR . '/footer.php');
-	exit;
-}
+$fdata = calcFreezeData($cdata);
 
 echo "<script type=\"text/javascript\">\n<!--\n";
-echo "function getLangNameFromExtension(ext)\n{\n";
-echo "\tswitch(ext) {\n";
-$exts = explode(" ", LANG_EXTS);
-foreach($exts as $ext) {
-	$langexts = explode(',', $ext);
-	for ($i = 1; $i < count($langexts); $i++) {
-		echo "\t\tcase '" . $langexts[$i]. "': return '" .$langexts[0] . "';\n";
+
+if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
+	$probdata = $DB->q('KEYVALUETABLE SELECT probid, CONCAT(probid,": ",name) as name FROM problem
+			 WHERE cid = %i AND allow_submit = 1
+			 ORDER BY probid', $cid);
+
+	echo "function getMainExtension(ext)\n{\n";
+	echo "\tswitch(ext) {\n";
+	foreach($langexts as $ext => $langid) {
+		echo "\t\tcase '" . $ext . "': return '" . $langid . "';\n";
 	}
+	echo "\t\tdefault: return '';\n\t}\n}\n\n";
+
+	echo "function getProbDescription(probid)\n{\n";
+	echo "\tswitch(probid) {\n";
+	foreach($probdata as $probid => $probname) {
+		echo "\t\tcase '" . htmlspecialchars($probid) . "': return '" . htmlspecialchars($probname) . "';\n";
+	}
+	echo "\t\tdefault: return '';\n\t}\n}\n\n";
 }
-echo "\t\tdefault: return '';\n\t}\n}\n";
+
+echo "initReload(" . $refreshtime . ");\n";
 echo "// -->\n</script>\n";
 
-echo "<h1>New Submission</h1>\n\n";
+echo "<h1>new submission</h1>";
 
 // Put overview of team submissions (like scoreboard)
 echo "<div id=\"teamscoresummary\">\n";
 putTeamRow($cdata, $login);
 echo "</div>\n";
 
-echo addForm('upload.php','post',null,'multipart/form-data');
+if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
+	if ( $submitted ) {
+		echo "<p class=\"submissiondone\">submission done <a href=\"./\" style=\"color: red\">x</a></p>\n\n";
+	} else {
+		echo addForm('upload.php','post',null,'multipart/form-data', null, ' onreset="resetUploadForm('.$refreshtime .');"') .
+		"<p id=\"submitform\">\n\n" .
+		"<span class=\"fileinputs\">\n\t" .
+		"<input type=\"file\" name=\"code[]\" id=\"maincode\" size=\"15\" /> " .
+		"\n</span>\n";
 
-?>
+		echo "<script type=\"text/javascript\">initFileUploads();</script>\n\n";
 
-<table>
-<tr><td><label for="code">File</label>:</td>
-<td><input type="file" name="code" id="code" size="40" onChange='detectProblemLanguage(document.getElementById("code").value);' /></td>
-</tr>
-<tr><td colspan="2">&nbsp;</td></tr>
-<tr><td><label for="probid">Problem</label>:</td>
-    <td><?php
+		$probs = array();
+		foreach($probdata as $probid => $dummy) {
+			$probs[$probid]=$probid;
+		}
+		$probs[''] = 'problem';
+		echo addSelect('probid', $probs, '', true);
+		
+		$langs = $DB->q('KEYVALUETABLE SELECT langid, name FROM language
+				 WHERE allow_submit = 1 ORDER BY name');
+		$langs[''] = 'language';
+		echo addSelect('langid', $langs, '', true);
 
-$probs = $DB->q('KEYVALUETABLE SELECT probid, CONCAT(probid,": ",name) as name FROM problem
-                 WHERE cid = %i AND allow_submit = 1
-                 ORDER BY probid', $cid);
+		echo addSubmit('submit', 'submit',
+			       "return checkUploadForm();");
 
-if( count($probs) == 0 ) {
-	error('No problems defined for this contest');
+		echo addReset('cancel');
+
+		if ( dbconfig_get('sourcefiles_limit',100) > 1 ) {
+			echo "<br /><span id=\"auxfiles\"></span>\n" .
+			    "<input type=\"button\" name=\"addfile\" id=\"addfile\" " .
+			    "value=\"Add another file\" onclick=\"addFileUpload();\" " .
+			    "disabled=\"disabled\" />\n";
+		}
+
+		echo "</p>\n</form>\n\n";
+	}
 }
-
-$probs[''] = 'by filename';
-echo addSelect('probid', $probs, '', true);
-
-?></td>
-</tr>
-<tr><td><label for="langext">Language</label>:</td>
-    <td><?php
-
-$langs = $DB->q('KEYVALUETABLE SELECT extension, name FROM language
-                 WHERE allow_submit = 1 ORDER BY name');
-
-if( count($langs) == 0 ) {
-	error('No languages defined');
-}
-
-$langs[''] = 'by extension';
-echo addSelect('langext', $langs, '', true);
-
-?></td>
-</tr>
-<tr><td colspan="2">&nbsp;</td></tr>
-<tr><td></td>
-    <td><?php echo addSubmit('Submit solution', 'submit',
-               "return confirm(getUploadConfirmString());"); ?></td>
-
-</tr>
-</table>
-
-<?php
-
-echo addEndForm();
 
 require(LIBWWWDIR . '/footer.php');

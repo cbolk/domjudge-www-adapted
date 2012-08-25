@@ -2,7 +2,6 @@
 /**
  * Include required files.
  *
- * $Id: account.php 3146 2011-09-25 20:35:28Z eldering $
  *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.

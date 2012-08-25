@@ -11,7 +11,20 @@ $title = 'Problems';
 
 require(LIBWWWDIR . '/header.php');
 
-echo "<h1>List of problems</h1>\n\n";
+echo "<h1><div class='fleft'>List of problems</div>&nbsp;\n";
+if ( IS_ADMIN ) {
+	echo "<div class='fright'>" . addLink('problem');
+	if ( class_exists("ZipArchive") ) {
+		echo "\n" . addForm('problem.php', 'post', null, 'multipart/form-data') .
+	 		addHidden('id', @$data['probid']) .
+	 		'Problem archive:' .
+	 		addFileField('problem_archive') .
+	 		addSubmit('Upload', 'upload') .
+	 		addEndForm() . "\n";
+	}
+       	echo "</div>\n\n";
+}
+echo "</h1>";
 
 $res = $DB->q('SELECT p.*, c.*, COUNT(testcaseid) AS testcases
                FROM problem p
@@ -75,19 +88,6 @@ if( $res->count() == 0 ) {
 			echo "</td></tr>\n";
 	}
 	echo "</tbody>\n</table>\n\n";
-}
-
-if ( IS_ADMIN ) {
-	echo "<p>" . addLink('problem');
-	if ( class_exists("ZipArchive") ) {
-		echo "\n" . addForm('problem.php', 'post', null, 'multipart/form-data') .
-	 		addHidden('id', @$data['probid']) .
-	 		'Problem archive:' .
-	 		addFileField('problem_archive') .
-	 		addSubmit('Upload', 'upload') .
-	 		addEndForm() . "\n";
-	}
-       	echo "</p>\n\n";
 }
 
 require(LIBWWWDIR . '/footer.php');

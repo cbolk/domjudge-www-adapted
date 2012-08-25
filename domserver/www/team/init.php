@@ -2,10 +2,10 @@
 /**
  * Include required files.
  *
- * $Id: init.php 3146 2010-02-27 10:55:28Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
+ *
+ * 2012-07-26: modified for shibbolet authentication
  */
 
 require_once('../configure.php');
@@ -29,7 +29,7 @@ setup_database_connection('team');
 require_once(LIBWWWDIR . '/common.php');
 require_once(LIBWWWDIR . '/print.php');
 require_once(LIBWWWDIR . '/clarification.php');
-require_once(LIBWWWDIR . '/scoreboard.php');
+require_once(LIBWWWDIR . '/scoreboard.cb.php');
 require_once(LIBWWWDIR . '/auth.team.php');
 
 // The functions do_login and show_loginpage, if called, do not return.

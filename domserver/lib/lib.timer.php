@@ -2,11 +2,10 @@
 /**
  * Functions for profiling / timing the DOMjudge code.
  *
- * $Id: lib.timer.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
+
 
 global $DEBUG_NUM_QUERIES;
 $DEBUG_NUM_QUERIES = 0;

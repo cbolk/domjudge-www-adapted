@@ -2,8 +2,6 @@
 /**
  * Error handling functions
  *
- * $Id: lib.error.php 3209 2010-06-12 00:13:43Z eldering $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -48,7 +46,7 @@ if ( defined('SYSLOG') ) {
 function logmsg($msglevel, $string) {
 	global $verbose, $loglevel;
 
-	$stamp = "[" . date('M d H:i:s') . "] " . SCRIPT_ID .
+	$stamp = "[" . strftime("%b %d %H:%M:%S") . "] " . SCRIPT_ID .
 		(function_exists('posix_getpid') ? "[" . posix_getpid() . "]" : "") .
 		": ";
 

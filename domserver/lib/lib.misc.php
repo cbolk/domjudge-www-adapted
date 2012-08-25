@@ -2,14 +2,18 @@
 /**
  * Miscellaneous helper functions
  *
- * $Id: lib.misc.php 3402 2010-10-27 19:47:17Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
 
 /** Constant to define MySQL datetime format in strftime() function notation. */
 define('MYSQL_DATETIME_FORMAT', '%Y-%m-%d %H:%M:%S');
+
+/** Perl regex class of allowed characters in identifier strings. */
+define('IDENTIFIER_CHARS', '[a-zA-Z0-9_-]');
+
+/** Perl regex of allowed filenames. */
+define('FILENAME_REGEX', '/^[a-zA-Z0-9][a-zA-Z0-9_\.-]*$/');
 
 /**
  * helperfunction to read all contents from a file.
@@ -26,13 +30,7 @@ function getFileContents($filename, $sizelimit = true) {
 	}
 
 	if ( $sizelimit && filesize($filename) > 50000 ) {
-		// When our lowest supported PHP version >= 5.1.0, we can just use
-		// file_get_contents() with the maxlen parameter.
-		$fh = fopen($filename,'r');
-		if ( ! $fh ) error("Could not open $filename for reading");
-		$ret = fread($fh, 50000) . "\n[output truncated after 50,000 B]\n";
-		fclose($fh);
-		return $ret;
+		return file_get_contents($filename, FALSE, NULL, -1, 50000);
 	}
 
 	return file_get_contents($filename);
@@ -51,16 +49,18 @@ function getCurContest($fulldata = FALSE) {
 	               WHERE enabled = 1 AND activatetime <= NOW()
 	               ORDER BY activatetime DESC LIMIT 1');
 
-	if ($now == NULL)
-		return FALSE;
-	else
-		return ( $fulldata ? $now : $now['cid'] );
+	if ( $now == NULL ) return FALSE;
+
+	if ( !$fulldata ) return $now['cid'];
+
+	return $now;
 }
 
 /**
  * Will return either the id of the next enabled but not activated contest, if existing.
  * When fulldata is true, returns the total row as an array
  * instead of just the ID.
+ * CB 
  */
 function getNextContest($fulldata = FALSE) {
 
@@ -69,10 +69,11 @@ function getNextContest($fulldata = FALSE) {
 	               WHERE enabled = 1 AND activatetime > NOW()
 	               ORDER BY activatetime DESC LIMIT 1');
 
-	if ($now == NULL)
-		return FALSE;
-	else
-		return ( $fulldata ? $now : $now['cid'] );
+	if ( $now == NULL ) return FALSE;
+
+	if ( !$fulldata ) return $now['cid'];
+
+	return $now;
 }
 
 /**
@@ -93,6 +94,22 @@ function problemVisible($probid)
 }
 
 /**
+ * Calculate contest time from wall-clock time.
+ * Returns time since contest start in seconds.
+ * This function is currently a stub around timediff, but introduced
+ * to allow minimal changes wrt. the removed intervals required for
+ * the ICPC specification.
+ */
+function calcContestTime($walltime)
+{
+	global $cdata;
+
+	$contesttime = difftime($walltime, $cdata['starttime']);
+
+	return $contesttime;
+}
+
+/**
  * Scoreboard calculation
  *
  * This is here because it needs to be called by the judgedaemon script
@@ -107,43 +124,67 @@ function problemVisible($probid)
 function calcScoreRow($cid, $team, $prob) {
 	global $DB;
 
-	$result = $DB->q('SELECT result, verified,
-	                  (UNIX_TIMESTAMP(submittime)-UNIX_TIMESTAMP(c.starttime))/60 AS timediff,
+	// First acquire an advisory lock to prevent other calls to
+	// calcScoreRow() from interfering with our update.
+	$lockstr = "domjudge.$cid.$team.$prob";
+	if ( $DB->q("VALUE SELECT GET_LOCK('$lockstr',3)") != 1 ) {
+		error("calcScoreRow failed to obtain lock '$lockstr'");
+	}
+
+	// Note the clause 'submittime < c.endtime': this is used to
+	// filter out TOO-LATE submissions from pending, but it also means
+	// that these will not count as solved. Correct submissions with
+	// submittime after contest end should never happen, unless one
+	// resets the contest time after successful judging.
+
+	$result = $DB->q('SELECT result, verified, submittime,
 	                  (c.freezetime IS NOT NULL && submittime >= c.freezetime) AS afterfreeze
-	                  FROM judging j
-	                  LEFT JOIN submission s USING(submitid)
+	                  FROM submission s
+	                  LEFT JOIN judging j ON(s.submitid=j.submitid AND j.valid=1)
 	                  LEFT OUTER JOIN contest c ON(c.cid=s.cid)
-	                  WHERE teamid = %s AND probid = %s AND j.valid = 1 AND
-	                  result IS NOT NULL AND s.cid = %i AND s.valid = 1
-					  ORDER BY submittime',
+	                  WHERE teamid = %s AND probid = %s AND s.cid = %i AND s.valid = 1
+	                  AND submittime < c.endtime
+	                  ORDER BY submittime',
 	                 $team, $prob, $cid);
 
-	$balloon = $DB->q('MAYBEVALUE SELECT balloon FROM scoreboard_jury
-                       WHERE cid = %i AND teamid = %s AND probid = %s',
-	                  $cid, $team, $prob);
-
-	if ( ! $balloon ) $balloon = 0;
 
 	// reset vars
-	$submitted_j = $time_j = $correct_j = 0;
-	$submitted_p = $time_p = $correct_p = 0;
+	$submitted_j = $pending_j = $time_j = $correct_j = 0;
+	$submitted_p = $pending_p = $time_p = $correct_p = 0;
 
 	// for each submission
 	while( $row = $result->next() ) {
 
-		if ( VERIFICATION_REQUIRED && ! $row['verified'] ) continue;
+		// Contest submit time in minutes for scoring.
+		$submittime = (int)floor(calcContestTime($row['submittime']) / 60);
+
+		// Check if this submission has a publicly visible judging result:
+		if ( (dbconfig_get('verification_required', 0) && ! $row['verified']) ||
+		     empty($row['result']) ) {
+
+			$pending_j++;
+			$pending_p++;
+			// Don't do any more counting for this submission.
+			continue;
+		}
 
 		$submitted_j++;
-		if ( ! $row['afterfreeze'] ) $submitted_p++;
+		if ( $row['afterfreeze'] ) {
+			// Show submissions after freeze as pending to the public
+			// (if SHOW_PENDING is enabled):
+			$pending_p++;
+		} else {
+			$submitted_p++;
+		}
 
 		// if correct, don't look at any more submissions after this one
 		if ( $row['result'] == 'correct' ) {
 
 			$correct_j = 1;
-			$time_j = round((int)@$row['timediff']);
+			$time_j = $submittime;
 			if ( ! $row['afterfreeze'] ) {
 				$correct_p = 1;
-				$time_p = round((int)@$row['timediff']);
+				$time_p = $submittime;
 			}
 			// stop counting after a first correct submission
 			break;
@@ -152,15 +193,19 @@ function calcScoreRow($cid, $team, $prob) {
 
 	// insert or update the values in the public/team scores table
 	$DB->q('REPLACE INTO scoreboard_public
-	        (cid, teamid, probid, submissions, totaltime, is_correct)
-	        VALUES (%i,%s,%s,%i,%i,%i)',
-	       $cid, $team, $prob, $submitted_p, $time_p, $correct_p);
+	        (cid, teamid, probid, submissions, pending, totaltime, is_correct)
+	        VALUES (%i,%s,%s,%i,%i,%i,%i)',
+	       $cid, $team, $prob, $submitted_p, $pending_p, $time_p, $correct_p);
 
 	// insert or update the values in the jury scores table
 	$DB->q('REPLACE INTO scoreboard_jury
-	        (cid, teamid, probid, submissions, totaltime, is_correct, balloon)
+	        (cid, teamid, probid, submissions, pending, totaltime, is_correct)
 	        VALUES (%i,%s,%s,%i,%i,%i,%i)',
-	       $cid, $team, $prob, $submitted_j, $time_j, $correct_j, $balloon);
+	       $cid, $team, $prob, $submitted_j, $pending_j, $time_j, $correct_j);
+
+	if ( $DB->q("VALUE SELECT RELEASE_LOCK('$lockstr')") != 1 ) {
+		error("calcScoreRow failed to release lock '$lockstr'");
+	}
 
 	return;
 }
@@ -174,7 +219,8 @@ function calcScoreRow($cid, $team, $prob) {
  */
 function getFinalResult($runresults)
 {
-	global $RESULTS_PRIO, $RESULTS_REMAP;
+	$results_prio  = dbconfig_get('results_prio');
+	$lazy_eval     = dbconfig_get('lazy_eval_results', true);
 
 	// Whether we have NULL results
 	$havenull = FALSE;
@@ -198,27 +244,47 @@ function getFinalResult($runresults)
 	}
 
 	// Not all results are in yet, and we don't do lazy evaluation:
-	if ( $havenull && ! LAZY_EVAL_RESULTS ) return NULL;
+	if ( $havenull && ! $lazy_eval ) return NULL;
 
-	if ( LAZY_EVAL_RESULTS ) {
+	if ( $lazy_eval ) {
 		// If we have NULL results, check whether the highest priority
 		// result has maximal priority. Use a local copy of the
-		// RESULTS_PRIO array, keeping the original untouched.
-		$tmp = $RESULTS_PRIO;
+		// 'results_prio' array, keeping the original untouched.
+		$tmp = $results_prio;
 		rsort($tmp);
 		$maxprio = reset($tmp);
 
-//		echo "maxprio = $maxprio\n";
 		// No highest priority result found: no final answer yet.
 		if ( $havenull && $bestprio<$maxprio ) return NULL;
 	}
 
-	// We have a (possibly lazy) final answer, check for remapping.
-	if ( array_key_exists($bestres, $RESULTS_REMAP) ) {
-		return $RESULTS_REMAP[$bestres];
-	} else {
-		return $bestres;
+	return $bestres;
+}
+
+/**
+ * Parse language extensions from LANG_EXTS to ext -> ID map
+ */
+function parseLangExts()
+{
+	global $langexts;
+
+	$langexts = array();
+	foreach ( explode(' ', LANG_EXTS) as $lang ) {
+		$exts = explode(',', $lang);
+		for ($i=1; $i<count($exts); $i++) $langexts[$exts[$i]] = $exts[1];
 	}
+}
+
+/**
+ * Get langid from extension (initialize global $langexts if necessary)
+ */
+function getLangID($ext)
+{
+	global $langexts;
+
+	if ( empty($langexts) ) parseLangExts();
+
+	return @$langexts[$ext];
 }
 
 /**
@@ -238,7 +304,7 @@ function now()
  */
 function difftime($time1, $time2)
 {
-	return strcmp($time1, $time2);
+	return strtotime($time1, 0) - strtotime($time2, 0);
 }
 
 /**
@@ -443,18 +509,73 @@ function initsignals()
 }
 
 /**
+ * Forks and detaches the current process to run as a daemon. Similar
+ * to the daemon() call present in Linux and *BSD.
+ *
+ * Argument pidfile is an optional filename to check for running
+ * instances and write PID to.
+ *
+ * Either returns successfully or exits with an error.
+ */
+function daemonize($pidfile = NULL)
+{
+	switch ( $pid = pcntl_fork() ) {
+	case -1: error("cannot fork daemon");
+	case  0: break; // child process: do nothing here.
+	default: exit;  // parent process: exit.
+	}
+
+	if ( ($pid = posix_getpid())===FALSE ) error("failed to obtain PID");
+
+	// Check and write PID to file
+	if ( !empty($pidfile) ) {
+		if ( ($fd=@fopen($pidfile, 'x+'))===FALSE ) {
+			error("cannot create pidfile '$pidfile'");
+		}
+		$str = "$pid\n";
+		if ( @fwrite($fd, $str)!=strlen($str) ) {
+			error(errno, "failed writing PID to file");
+		}
+		register_shutdown_function('unlink', $pidfile);
+	}
+
+	// Notify user with daemon PID before detaching from TTY.
+	logmsg(LOG_NOTICE, "daemonizing with PID = $pid");
+
+	// Close std{in,out,err} file descriptors
+	if ( !fclose(STDIN ) || !($GLOBALS['STDIN']  = fopen('/dev/null', 'r')) ||
+	     !fclose(STDOUT) || !($GLOBALS['STDOUT'] = fopen('/dev/null', 'w')) ||
+	     !fclose(STDERR) || !($GLOBALS['STDERR'] = fopen('/dev/null', 'w')) ) {
+		error("cannot reopen stdio files to /dev/null");
+	}
+
+	// Start own process group, detached from any tty
+	if ( posix_setsid()<0 ) error("cannot set daemon process group");
+}
+
+/**
  * This function takes a temporary file of a submission,
  * validates it and puts it into the database. Additionally it
  * moves it to a backup storage.
  */
-function submit_solution($team, $prob, $langext, $file)
+function submit_solution($team, $prob, $lang, $files, $filenames, $origsubmitid = NULL)
 {
-	if( empty($team)    ) error("No value for Team.");
-	if( empty($prob)    ) error("No value for Problem.");
-	if( empty($langext) ) error("No value for Language.");
-	if( empty($file)    ) error("No value for Filename.");
+	if( empty($team) ) error("No value for Team.");
+	if( empty($prob) ) error("No value for Problem.");
+	if( empty($lang) ) error("No value for Language.");
+
+	if ( !is_array($files) || count($files)==0 ) error("No files specified.");
+	if ( !is_array($filenames) || count($filenames)!=count($files) ) {
+		error("Nonmatching (number of) filenames specified.");
+	}
+
+	if ( count($filenames)!=count(array_unique($filenames)) ) {
+		error("Duplicate filenames detected.");
+	}
 
 	global $cdata,$cid, $DB;
+
+	$sourcesize = dbconfig_get('sourcesize_limit');
 
 	// If no contest has started yet, refuse submissions.
 	$now = now();
@@ -464,9 +585,9 @@ function submit_solution($team, $prob, $langext, $file)
 	}
 
 	// Check 2: valid parameters?
-	if( ! $lang = $DB->q('MAYBEVALUE SELECT langid FROM language WHERE
-						  extension = %s AND allow_submit = 1', $langext) ) {
-		error("Language '$langext' not found in database or not submittable.");
+	if( ! $langid = $DB->q('MAYBEVALUE SELECT langid FROM language WHERE
+						  langid = %s AND allow_submit = 1', $lang) ) {
+		error("Language '$lang' not found in database or not submittable.");
 	}
 	if( ! $login = $DB->q('MAYBEVALUE SELECT login FROM team WHERE login = %s',$team) ) {
 		error("Team '$team' not found in database.");
@@ -476,52 +597,81 @@ function submit_solution($team, $prob, $langext, $file)
 							AND cid = %i AND allow_submit = "1"', $prob, $cid) ) {
 		error("Problem '$prob' not found in database or not submittable [c$cid].");
 	}
-	if( ! is_readable($file) ) {
-		error("File '$file' not found (or not readable).");
+
+	// Reindex arrays numerically to allow simultaneously iterating
+	// over both $files and $filenames.
+	$files     = array_values($files);
+	$filenames = array_values($filenames);
+
+	$totalsize = 0;
+	for($i=0; $i<count($files); $i++) {
+		if ( ! is_readable($files[$i]) ) {
+			error("File '".$files[$i]."' not found (or not readable).");
+		}
+		if ( ! preg_match(FILENAME_REGEX, $filenames[$i]) ) {
+			error("Illegal filename '".$filenames[$i]."'.");
+		}
+		$totalsize += filesize($files[$i]);
 	}
-	if( filesize($file) > SOURCESIZE*1024 ) {
-		error("Submission file is larger than ".SOURCESIZE." kB.");
+	if ( $totalsize > $sourcesize*1024 ) {
+		error("Submission file(s) are larger than $sourcesize kB.");
 	}
 
 	logmsg (LOG_INFO, "input verified");
 
 	// Insert submission into the database
 	$id = $DB->q('RETURNID INSERT INTO submission
-				  (cid, teamid, probid, langid, submittime, sourcecode)
-				  VALUES (%i, %s, %s, %s, %s, %s)',
-				 $cid, $team, $probid, $lang, $now,
-				 getFileContents($file, false));
+				  (cid, teamid, probid, langid, submittime, origsubmitid)
+				  VALUES (%i, %s, %s, %s, %s, %i)',
+	             $cid, $team, $probid, $langid, $now, $origsubmitid);
+
+	for($rank=0; $rank<count($files); $rank++) {
+		$DB->q('INSERT INTO submission_file
+		        (submitid, filename, rank, sourcecode) VALUES (%i, %s, %i, %s)',
+		       $id, $filenames[$rank], $rank, getFileContents($files[$rank], false));
+	}
+
+	// Recalculate scoreboard cache for pending submissions
+	calcScoreRow($cid, $team, $probid);
 
 	// Log to event table
 	$DB->q('INSERT INTO event (eventtime, cid, teamid, langid, probid, submitid, description)
-			VALUES(%s, %i, %s, %s, %s, %i, "problem submitted")',
-		   now(), $cid, $team, $lang, $prob, $id);
-
-	$tofile = getSourceFilename($cid,$id,$team,$prob,$langext);
-	$topath = SUBMITDIR . "/$tofile";
+	        VALUES(%s, %i, %s, %s, %s, %i, "problem submitted")',
+	       now(), $cid, $team, $langid, $probid, $id);
 
 	if ( is_writable( SUBMITDIR ) ) {
 		// Copy the submission to SUBMITDIR for safe-keeping
-		if ( ! @copy($file, $topath) ) {
-			warning("Could not copy '" . $file . "' to '" . $topath . "'");
+		for($rank=0; $rank<count($files); $rank++) {
+			$fdata = array('cid' => $cid,
+			               'submitid' => $id,
+			               'teamid' => $team,
+			               'probid' => $probid,
+			               'langid' => $langid,
+			               'rank' => $rank,
+			               'filename' => $filenames[$rank]);
+			$tofile = SUBMITDIR . '/' . getSourceFilename($fdata);
+			if ( ! @copy($files[$rank], $tofile) ) {
+				warning("Could not copy '" . $files[$rank] . "' to '" . $tofile . "'");
+			}
 		}
 	} else {
 		logmsg(LOG_DEBUG, "SUBMITDIR not writable, skipping");
 	}
 
 	if( difftime($cdata['endtime'], $now) <= 0 ) {
-		warning("The contest is closed, submission stored but not processed. [c$cid]");
+		logmsg(LOG_INFO, "The contest is closed, submission stored but not processed. [c$cid]");
 	}
 
 	return $id;
 }
-
 /**
  * Compute the filename of a given submission.
  */
-function getSourceFilename($cid,$sid,$team,$prob,$langext)
+function getSourceFilename($fdata)
 {
-	return "c$cid.s$sid.$team.$prob.$langext";
+	return implode('.', array('c'.$fdata['cid'], 's'.$fdata['submitid'],
+	                          $fdata['teamid'], $fdata['probid'], $fdata['langid'],
+	                          $fdata['rank'], $fdata['filename']));
 }
 
 /**
@@ -619,4 +769,25 @@ function XMLgetattr($node, $attr)
 	if ( $attrnode===NULL ) return NULL;
 
 	return $attrnode->nodeValue;
+}
+
+/**
+ * Log an action to the auditlog table.
+ */
+function auditlog($datatype, $dataid, $action, $extrainfo = null, $username = null)
+{
+	global $cid, $login, $DB;
+
+	if ( !empty($username) ) {
+		$user = $username;
+	} elseif ( IS_JURY ) {
+		$user = getJuryMember();
+	} else {
+		$user = $login;
+	}
+
+	$DB->q('INSERT INTO auditlog
+	        (logtime, cid, user, datatype, dataid, action, extrainfo)
+	        VALUES(%s, %i, %s, %s, %s, %s, %s)',
+	       now(), $cid, $user, $datatype, $dataid, $action, $extrainfo);
 }

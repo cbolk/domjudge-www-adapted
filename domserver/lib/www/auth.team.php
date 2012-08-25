@@ -6,7 +6,6 @@
  * to the team ID and $teamdata contains the corresponding row from
  * the database. $ip is set to the remote IP address used.
  *
- * $Id: auth.team.php 3550 2011-06-26 15:27:16Z eldering $
  *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
@@ -53,7 +52,7 @@ function logged_in()
 	if ( !empty($teamdata) ) {
 		$login = $teamdata['login'];
 		// is this the first visit? record that in the team table
-		if ( empty($row['teampage_first_visited']) ) {
+		if ( empty($teamdata['teampage_first_visited']) ) {
 			$hostname = gethostbyaddr($ip);
 			$DB->q('UPDATE team SET teampage_first_visited = %s, hostname = %s
 			        WHERE login = %s',
@@ -175,8 +174,8 @@ function do_login()
 	}
 
 	require(LIBWWWDIR . '/header.php');
-	echo "<h1>Authenticated</h1>\n\n<p>Successfully authenticated as team " .
-	    htmlspecialchars($login) . " on " . htmlspecialchars($ip) . ".</p>\n" .
+	echo "<h1>Authenticated</h1>\n\n<p>Successfully authenticated as user " .
+	    htmlspecialchars($login) . " @ " . htmlspecialchars($ip) . ".</p>\n" .
 	    "<p><a href=\"$_SERVER[PHP_SELF]\">Continue to your team page</a>, " .
 	    "and good luck!</p>\n\n";
 	require(LIBWWWDIR . '/footer.php');
@@ -388,8 +387,8 @@ function do_auth()
 
 		if ( !$teamdata ) {
 			sleep(3);
-			show_failed_login("This user has no access to this application " .
-			                  "Please contact a staff member.");
+			show_failed_login("This user has no access to this application.<br/>" .
+			                  "Please contact a staff member <a href='mailto:bolchini@elet.polimi.it?subject=richiesta accesso webapp sfide' class='login_request'></a> to be enabled.");
 		}
 
 		$login = $teamdata['login'];
@@ -401,7 +400,7 @@ function do_auth()
 		$cnt = $DB->q($sqlq);
 		if($cnt != 1)
 			show_failed_nameupdate("Impossible to update the hostname you are connecting from");				
-		
+		auditlog('team login', $login, 'login', "$login at $ip");
 		break;
 
 	default:

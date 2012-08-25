@@ -3,11 +3,8 @@
 /**
  * Common functions in jury interface
  *
- * $Id: common.jury.php 3248 2010-07-13 11:17:36Z werth $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
- * Modified by CBolk
  */
 
 /**
@@ -46,6 +43,7 @@ function editLink($table, $value, $multi = false)
 /**
  * Return a link to delete a specific data element from a given table.
  * Takes the table, the key field to match on and the value.
+ * CBMODIFIED
  */
 function delLink($table, $field, $value)
 {
@@ -62,7 +60,6 @@ function delLink($table, $field, $value)
  */
 function rejudgeForm($table, $id)
 {
-	require_once(LIBWWWDIR . '/forms.php');
 
 	$ret = addForm('rejudge.php') .
 		addHidden('table', $table) .
@@ -218,60 +215,38 @@ function importZippedProblem($zip, $probid = NULL)
 		}
 	}
 
+	// submit reference solutions
+	if ( isset($ini_array['allow_submit']) && $ini_array['allow_submit'] ) {
+		// First find all submittable languages:
+		$langs = $DB->q('KEYVALUETABLE SELECT langid AS extension, langid AS langid FROM language
+		                 WHERE allow_submit = 1');
+
+		for ($j = 0; $j < $zip->numFiles; $j++) {
+			$filename = $zip->getNameIndex($j);
+			$extension = end(explode(".", $filename));
+			$langid = getLangID($extension);
+			if( !empty($langid) && isset($langs[$langid]) ) {
+				if ( !($tmpfname = mkstemps(TMPDIR."/ref_solution-XXXXXX",0)) ) {
+					error("Could not create temporary file.");
+				}
+				file_put_contents($tmpfname, $zip->getFromIndex($j));
+				if( filesize($tmpfname) <= dbconfig_get('sourcesize_limit')*1024 ) {
+					submit_solution('domjudge', $probid, $langs[$langid], array($tmpfname), array($filename));
+				}
+				unlink($tmpfname);
+			}
+		}
+	}
+
 	// FIXME: insert PDF into database
 
 	return $probid;
 }
 
 /**
- * Reads verifier from POST variables, returns $default if nothing is set.
+ * returns jury member username as supplied by Apache
  */
-function getVerifier($default = null)
+function getJuryMember()
 {
-	$verifier = $default;
-	if ( ! empty($_POST['verifier_selected']) ) $verifier = $_POST['verifier_selected'];
-	if ( ! empty($_POST['verifier_typed']) )    $verifier = $_POST['verifier_typed'];
-
-	return $verifier;
-}
-
-/**
- * Sets verifier in a cookie, only if a non-empty string is given.
- */
-function setVerifier($verifier)
-{
-	// Set cookie of last verifier, expiry defaults to end of session.
-	if (  !empty($verifier) && is_string($verifier) ) {
-		if  (version_compare(PHP_VERSION, '5.2') >= 0) {
-			// HTTPOnly Cookie, while this cookie is not security critical
-			// it's a good habit to get into.
-			setcookie('domjudge_lastverifier', $verifier, null, null, null, null, true);
-		} else {
-			setcookie('domjudge_lastverifier', $verifier);
-		}
-	}
-}
-
-/**
- * Add a both a text field and select box to select a verifier.
- */
-function addVerifierSelect($default = null)
-{
-	global $DB;
-
-	$verifiers = $DB->q('COLUMN SELECT DISTINCT verifier FROM judging
-	                     WHERE verifier IS NOT NULL AND verifier != ""
-	                     ORDER BY verifier');
-
- 	if ( empty($default) ) $default = null;
-	if ( $default!==null && !in_array($default,$verifiers) ) $verifiers[] = $default;
-
-	$res = addInput('verifier_typed', '', 10, 15);
-	if ( count($verifiers) > 0 ) {
-		$opts = array(0 => "");
-		$opts = array_merge($verifiers, $opts);
-		$res .= ' or ' . addSelect('verifier_selected', $opts, $default);
-	}
-
-	return $res;
+	return $_SERVER['REMOTE_USER'];
 }

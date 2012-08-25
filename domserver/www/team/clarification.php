@@ -3,8 +3,6 @@
  * Show clarification thread and reply box.
  * When no id is given, show clarification request box.
  *
- * $Id: clarification.php 3402 2010-10-27 19:47:17Z kink $
- *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
  */
@@ -33,14 +31,16 @@ if ( isset($_POST['submit']) && !empty($_POST['bodytext']) ) {
 	if ( !problemVisible($_POST['problem']) ) $_POST['problem'] = 'general';
 
 	$newid = $DB->q('RETURNID INSERT INTO clarification
-	                 (cid, submittime, sender, probid, body)
-	                 VALUES (%i, %s, %s, %s, %s)',
-	                $cid, now(), $login,
+	                 (cid, respid, submittime, sender, probid, body)
+	                 VALUES (%i, %i, %s, %s, %s, %s)',
+	                $cid, $respid, now(), $login,
 	                ($_POST['problem'] == 'general' ? NULL : $_POST['problem']),
 	                $_POST['bodytext']);
+	
+	auditlog('clarification', $newid, 'added');
 
 	// redirect back to the original location
-	header('Location: clarifications.php');
+	header('Location: ./');
 	exit;
 }
 

@@ -24,6 +24,7 @@ if ( isset($_GET['cmd'] ) ) {
 
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/scoreboard.php');
+require(LIBWWWDIR . '/team.cb.php');
 
 if ( IS_ADMIN && !empty($cmd) ):
 

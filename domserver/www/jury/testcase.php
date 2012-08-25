@@ -124,7 +124,6 @@ if ( isset($_POST['probid']) && IS_ADMIN ) {
 
 	$maxrank = 0;
 	foreach($data as $rank => $row) {
-		$result .= "<br>" . $rank;
 		foreach($INOROUT as $inout) {
 	
 			if ( $rank>$maxrank ) $maxrank = $rank;
@@ -194,7 +193,6 @@ if ( isset($_POST['probid']) && IS_ADMIN ) {
 		 !empty($_FILES['add_ifile']['name']) || 
 		 !empty($_FILES['add_output']['name']) ||
 		 !empty($_FILES['add_ofile']['name'])) {
-		$result .= "<br>new!";
 		$content = array();
 		$rank = $maxrank + 1;
 		$src = "";
@@ -225,7 +223,7 @@ if ( isset($_POST['probid']) && IS_ADMIN ) {
 			        $_FILES['add_ofile']['name'] . "','" .  @$_POST['add_desc'] . "'," . @$_POST['add_public'].")";
 			$DB->q($strSQL);
 			auditlog('testcase', $probid, 'added', "rank $rank");
-			$result .= $strSQL;
+			//$result .= $strSQL;
 			$result .= "<li>Added new testcase $rank from:<br/>" . $src . "</li>\n";
 		}
 	}
