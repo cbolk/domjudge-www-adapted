@@ -5,12 +5,10 @@
  * 'submit_solution' to add the submission to the database and store a
  * copy of the source in SUBMITDIR.
  *
- * Called: submit_db.php <team> <ip> <problem> <langext> <filename>
+ * Called: submit_db.php <team> <ip> <problem> <langext> [<tempfile> <filename>]...
  * Returns exitcode != 0 on failure.
  *
- * Generated from 'submit_db.php.in' on Wed Oct  5 17:03:42 CEST 2011.
- *
- * $Id: submit_db.php.in 3302 2010-08-09 18:39:20Z eldering $
+ * @configure_input@
  *
  * Part of the DOMjudge Programming Contest Jury System and licenced
  * under the GNU GPL. See README and COPYING for details.
@@ -25,7 +23,8 @@ define ('LOGFILE', LOGDIR.'/submit.log');
 
 require(LIBDIR.'/init.php');
 
-setup_database_connection('jury');
+//setup_database_connection('jury');
+setup_database_connection();
 
 // Get commandline vars and case-normalize them
 $argv = $_SERVER['argv'];
@@ -34,9 +33,22 @@ $team    = strtolower(@$argv[1]);
 $ip      = @$argv[2];
 $prob    = strtolower(@$argv[3]);
 $langext = strtolower(@$argv[4]);
-$file    = @$argv[5];
+// $file    = @$argv[5];
 
-logmsg(LOG_DEBUG, "arguments: '$team' '$ip' '$prob' '$langext' '$file'");
+$files = array();
+$filenames = array();
+for($i=5; $i<count($argv); $i+=2) {
+	$files[] = $argv[$i];
+	if ( $i+1>=count($argv) ) error("Non-matching number of tempfiles and filenames.");
+	$filenames[] = $argv[$i+1];
+}
+
+if ( count($filenames) > dbconfig_get('sourcefiles_limit',100) ) {
+	error("Tried to submit more than the allowed number of source files.");
+}
+
+logmsg(LOG_DEBUG, "arguments: '$team' '$ip' '$prob' '$langext' and " .
+       count($files) . " files specified");
 
 $cdata = getCurContest(TRUE);
 $cid = $cdata['cid'];
@@ -48,6 +60,10 @@ if ( AUTH_METHOD!='IPADDRESS' ) {
 // Verify and register IP address here, as other authentication
 // methods might conflict with this.
 $teamdata = $DB->q('MAYBETUPLE SELECT * FROM team WHERE login = %s', $team);
+
+if ( $teamdata['enabled'] != 1 ) {
+	error("Team '$team' is disabled.");
+}
 
 if( ! compareipaddr($teamdata['authtoken'],$ip) ) {
 	if ( $teamdata['authtoken'] == NULL && ! STRICTIPCHECK ) {
@@ -72,7 +88,7 @@ if( ! compareipaddr($teamdata['authtoken'],$ip) ) {
 	}
 }
 
-$sid = submit_solution($team, $prob, $langext, $file);
+$sid = submit_solution($team, $prob, $langext, $files, $filenames);
 
 logmsg(LOG_NOTICE, "submitted $team/$prob/$langext, id s$sid/c$cid");
 

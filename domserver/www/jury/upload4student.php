@@ -11,16 +11,12 @@ require('init.php');
 $title = 'Submit';
 require(LIBWWWDIR . '/header.php');
 require(LIBWWWDIR . '/forms.php');
-$refreshtime = 120;
-
-$fdata = calcFreezeData($cdata);
 
 echo "<script type=\"text/javascript\">\n<!--\n";
 
-if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
-	$probdata = $DB->q('KEYVALUETABLE SELECT probid, CONCAT(probid,": ",name) as name FROM problem
-			 WHERE cid = %i AND allow_submit = 1
-			 ORDER BY probid', $cid);
+	$teamdata = $DB->q('KEYVALUETABLE SELECT login, CONCAT(login,": ",name) as name FROM team WHERE categoryid=1 ORDER BY login');
+
+	$probdata = $DB->q('KEYVALUETABLE SELECT probid, CONCAT(probid,": ",name) as name FROM problem ORDER BY probid');
 
 	echo "function getMainExtension(ext)\n{\n";
 	echo "\tswitch(ext) {\n";
@@ -35,19 +31,23 @@ if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
 		echo "\t\tcase '" . htmlspecialchars($probid) . "': return '" . htmlspecialchars($probname) . "';\n";
 	}
 	echo "\t\tdefault: return '';\n\t}\n}\n\n";
-}
 
-echo "initReload(" . $refreshtime . ");\n";
+	echo "function getTeamlist(login)\n{\n";
+	echo "\tswitch(login) {\n";
+	foreach($teamdata as $login => $teamname) {
+		echo "\t\tcase '" . htmlspecialchars($login) . "': return '" . htmlspecialchars($teamname) . "';\n";
+	}
+	echo "\t\tdefault: return '';\n\t}\n}\n\n";
+	
+
 echo "// -->\n</script>\n";
 
-echo "<h1>new submission</h1>";
+echo "<h1>upload submission for student</h1>";
+
+
 
 // Put overview of team submissions (like scoreboard)
-echo "<div id=\"teamscoresummary\">\n";
-putTeamRow($cdata, $login);
-echo "</div>\n";
 
-if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
 	if ( $submitted ) {
 		echo "<p class=\"submissiondone\">submission done <a href=\"./\" style=\"color: red\">x</a></p>\n\n";
 	} else {
@@ -66,16 +66,26 @@ if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
 		}
 		$probs[''] = 'problem';
 		echo addSelect('probid', $probs, '', true);
+
+		$teams = array();
+		foreach($teamdata as $login => $teamname) {
+			$teams[$login]= $teamname;
+		}
+		$teams[''] = 'team';
+		echo addSelect('login', $teams, '', true);
 		
 		$langs = $DB->q('KEYVALUETABLE SELECT langid, name FROM language
 				 WHERE allow_submit = 1 ORDER BY name');
 		$langs[''] = 'language';
 		echo addSelect('langid', $langs, '', true);
 
+		echo "<br/>";
+		echo "<br/>";
 		echo addSubmit('submit', 'submit',
 			       "return checkUploadForm();");
 
 		echo addReset('cancel');
+		echo "<br/>";
 
 		if ( dbconfig_get('sourcefiles_limit',100) > 1 ) {
 			echo "<br /><span id=\"auxfiles\"></span>\n" .
@@ -86,6 +96,6 @@ if ( ENABLE_WEBSUBMIT_SERVER && $fdata['cstarted'] ) {
 
 		echo "</p>\n</form>\n\n";
 	}
-}
+
 
 require(LIBWWWDIR . '/footer.php');

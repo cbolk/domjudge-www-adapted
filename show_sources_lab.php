@@ -24,9 +24,9 @@ require('init.php');
 
 $id = (int)$_GET['id'];
 
-$strSQL = 'KEYTABLE SELECT s.submitid AS ARRAYKEY, t.name, t.login, s.langid, sourcecode, j.result, jr.output_error FROM submission_file LEFT JOIN submission s USING(submitid) 
-				INNER JOIN team t ON s.teamid = t.login INNER JOIN judging j ON s.submitid = j.submitid INNER JOIN judging_run jr ON j.judgingid = jr.judgingid
-				 WHERE probid = ' . $id . ' ORDER BY t.login, s.submitid';
+$strSQL = 'KEYTABLE SELECT s.submitid AS ARRAYKEY, t.name, t.login, s.langid, sourcecode FROM submission_file LEFT JOIN submission s USING(submitid) 
+				INNER JOIN team t ON s.teamid = t.login
+				 WHERE probid = ' . $id . ' ORDER BY s.submitid';
 $sdata = $DB->q($strSQL);
 if ( empty($sdata) ) error ("No submissions for problem $id");
 
@@ -48,21 +48,11 @@ require(LIBWWWDIR . '/header.subs.php');
 
 echo '<h1 class="filename"><a name="source"></a>Submissions for problem ' . $id .' <a>show all</a></h1>';
 echo '<div class="submissionslist">';
-$n = 0;
-$uid = -1;
 foreach($sdata as $submitid => $sub){
-	if($sub['login'] != $uid){
-		$n++;
-		$uid = $sub['login'];
-	}
 	echo '<div id="sub_result_' . $submitid . '" class="sub_result" rel="' . $submitid . '">', PHP_EOL;
 	echo '	<div id="sub_summary_' . $submitid . '" class="sub_summary" onclick="toggle_result(' . $submitid . ')">', PHP_EOL;
-	echo '		' . $n . '<div class="title"> <span class="arrow"></span>#' . $submitid  . ' by ' . $sub['login'] . ' ('. $sub['name'] . ')</div>', PHP_EOL;
+	echo '		<div class="title"><span class="arrow"></span>#' . $submitid  . ' by ' . $sub['login'] . ' ('. $sub['name'] . ')</div>', PHP_EOL;
 	echo '<a href="' . $PHP_SELF .'?id=' .$id . '&fetch=' . $submitid.  '">download</a>', PHP_EOL;
-	if($sub['result'] == "wrong-answer")
-		echo '<span class="fright"><strong>' . $sub['result'] . '</strong> [' . $sub['output_error'] . ']</span>', PHP_EOL;
-	else
-		echo '<span class="fright"><strong>' . $sub['result'] . '</strong></span>', PHP_EOL;	
 	echo '	</div> <!-- sub_summary_ -->', PHP_EOL;
 	echo '	<div id="sub_detail_' . $submitid . '" class="sub_detail" style="display:none;">', PHP_EOL;
 	echo '		<pre class="brush: ' . $sub['langid'] . '">', PHP_EOL;

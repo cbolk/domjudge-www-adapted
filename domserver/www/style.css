@@ -12,6 +12,8 @@ body {
 	border-bottom: 7px solid #133A87;
 }
 
+.noprint {display: none;}
+
 a:link, a:visited, a:hover {color: #000066;}
 a:hover {text-decoration: underline;}
 
@@ -26,9 +28,11 @@ img {	border: 0; }
 .sol_incorrect    { color: red;    }
 .sol_queued       { color: gray;   }
 
+
 tr.sub_ignore td {
 	text-decoration: line-through;
 }
+
 
 .disabled         { color: silver; }
 .disabled a       { color: gray;   }
@@ -41,6 +45,9 @@ table {
 }
 
 th {vertical-align: bottom;}
+
+td.tacenter {text-align: center;}
+
 
 caption {
 	font-weight: bold;
@@ -63,7 +70,7 @@ tr.unread td {
 .list {
 	border-collapse: collapse;
 	border-spacing: 0px;
-	font-size: 13px;
+	font-size: 10px;
 }
 .list td, .list th {
 	vertical-align: bottom;
@@ -129,7 +136,7 @@ legend {
 }
 
 
-.scoreboard {  border: 1px solid #ccc;padding: 2px;}
+.scoreboard {  color: #000;border: 1px solid #ccc;padding: 2px;}
 .scoreboard td { font-size: small; }
 .scoreboard tr { border-bottom: 1px solid silver; }
 .scoreboard td, .scoreboard th {
@@ -149,8 +156,8 @@ legend {
 	font-variant: small-caps;
 	border-bottom: 2px solid black;
 }
-.score_correct   { background: #33FF66; }
-.score_incorrect { background: #FF6666; }
+.score_correct   { background: #99FFBB; }
+.score_incorrect { background: #FFAAAA; }
 /* .score_neutral   { background: white;   } */
 
 #scoresolv,#scoretotal { width: 5em; }
@@ -164,7 +171,7 @@ td.scorenc { border-color: silver; }
 	border-top: 2px solid black;
 	border-bottom: none;
 	font-weight: bold;
-	color: #133A87;
+	color: #000;
 }
 #scorethisisme .scoretn {
 	background: #ff6600;
@@ -203,15 +210,15 @@ body{text-align: center;}
 }	
 
 h1 {
-	font-size: 30px;
+	font-size: 25px;
 	border-bottom: 1px solid #CCC;
 	color: #393939;
 	display: block;
 	font-style: normal;
 	font-variant: normal;
 	font-weight: bold;
-	height: 30px;
-	line-height: 30px;
+	height: 25px;
+	line-height: 25px;
 	margin: 0px;
 	margin-top: 20px;
 	margin-bottom: 20px;
@@ -236,7 +243,7 @@ h1 {
 }
 
 #menutop ul.nev {
-	font: 13px helvetica,arial,freesans,clean,sans-serif;
+	font: 11px helvetica,arial,freesans,clean,sans-serif;
 	line-height: 1.4em;
 	padding: 8px 3px 8px 2px;
 	font-weight: bold;
@@ -250,9 +257,9 @@ h1 {
 }
 
 #menutop ul.nav {
-	font: 15px helvetica,arial,freesans,clean,sans-serif;
-	line-height: 1.4em;
-	padding: 8px 3px 8px 2px;
+	font: 11px helvetica,arial,freesans,clean,sans-serif;
+	line-height: 1.2em;
+	padding: 6px 3px 6px 2px;
 	font-weight: bold;
 	text-shadow: white 1px 1px 0px;
 	border-bottom: 2px solid #E9E9E9;
@@ -319,7 +326,7 @@ h1 {
 	padding-right: 0px;
 	padding-top: 0px;
 	position: relative;
-	font-size: 13px;
+	font-size: 11px;
 	text-align: center;
 }
 
@@ -336,7 +343,7 @@ h1 {
 
 #toptitle{
 /*	width: 1000px; */
-	font-size: 22px;
+	font-size: 20px;
 	text-align: center;
 	color:  #133A87;
 	font-weight: bold;
@@ -352,7 +359,7 @@ h1 {
 	background-color:  #133A87;
 	padding: 15px;
 	font-weight: bold;
-	font-size: 30px;
+	font-size: 25px;
 	text-align: center;
 }
 
@@ -409,6 +416,8 @@ h3.challenge_info {font-size:22px;color:#000;}
 hr.points_line{clear:both;float:left;margin:10px 0 0 0;border:0;border-top:1px solid #ccc;border-style:dashed;}
 hr.points_line{display:block;}
 .coding pre{padding:6px;color:#000;background-color:#eee;font-size:11px}
+.coding ul li {margin-left: 20px;}
+.coding ul ul li {margin-left: 30px;}
 pre.brush{color:#eee;background:#333;padding:6px 12px;margin-bottom:15px}
 
 .boxinthemiddle{text-align: center;margin: auto;width: 320px;}
@@ -421,10 +430,21 @@ input[type=button],input[type=submit]{cursor:pointer}
 .textarea, .input{border:1px solid #ccc;padding:5px 5px 0 5px;height:35px;font-size:24px;-moz-box-shadow:inset 0 0 5px #e1ddda;-webkit-box-shadow:inset 0 0 5px#e1ddda;box-shadow:inner 0 0 5px #e1ddda;font-family:arial;resize:none}
 registration.input{width: 100px;}
 
+.newbutton {
+    border-radius: 2px 2px 2px 2px;
+    background-color: #FFF;
+    border:1px solid #ccc;
+        background: -moz-linear-gradient(center bottom , rgb(210, 210, 210), rgb(255, 255, 255)) repeat scroll 0% 0% transparent;
+    color: rgb(50, 50, 50);
+    text-shadow: 0px 0px 2px rgb(255, 255, 255);
+    box-shadow: 0px 0px 1px rgb(255, 255, 255) inset, 0px 0px 0.4em rgb(200, 200, 200) inset, 0px 0.1em 0px rgb(130, 130, 130), 0px 0.11em 0px rgba(0, 0, 0, 0.4), 0px 0.1em 0.11em rgba(0, 0, 0, 0.9);
+    font-size: 11px;
+    font-family: Lucida Grande;
+}
 .grayback{background: #ddd;}
 
 th.theader {
-	font-size: 14px;
+	font-size: 12px;
 	font-weight: bold;
 	color: #000;
 	border-top: 1px solid #000;
@@ -436,7 +456,7 @@ th.theader {
 
 th.detail{border-bottom: 1px solid #000;}
 tr.detail {
-	font-size: 14px;
+	font-size: 12px;
 	font-weight: bold;
 	border: 1px solid #ccc;
 	border-bottom: 1px solid #000;
@@ -543,6 +563,72 @@ del
 
 #thistorystats {float: right;}
 
+
+/* lab results */
+#tableresults {
+	font: 9px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	border-bottom: 1px solid #ddd;
+	border-left: 1px solid #ddd;	
+}
+
+#tableresults th {
+	font: bold 9px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	color: #000;
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+	border-top: 1px solid #ddd;
+	text-transform: uppercase;
+	text-align: left;
+	padding: 1px 1px 1px 2px;
+	vertical-align: top;
+}
+
+#tableresults th.spec {	
+	border-left: 1px solid #ddd;
+	border-top: 0;
+	font: bold 9px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+}
+
+#tableresults th.specalt {
+	border-left: 1px solid #ddd;
+	border-top: 0;
+	background: #f5fafa url(./images/triangle2.gif) no-repeat;
+	font: bold 10px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	color: #000;
+}
+
+#tableresults th.acenter {	
+	text-align: center;
+}
+
+#tableresults th.aright {	
+	text-align: right;
+}
+
+
+#tableresults td {
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+	background: #fff;
+	padding: 2px 2px 2px 2px;
+	color: #000;
+}
+
+#tableresults td.alt {
+	background: #F5FAFA;
+	color: #000;
+}
+
+#tableresults .acenter {
+	text-align: center;
+}
+#tableresults th.leftborder  {border-left: 1px solid black;}
+#tableresults th.rightborder {border-left: 1px solid black;}
+
+#tableresults td.lab_correct {background-color: #33FF88;}
+#tableresults td.lab_incorrect {background-color: #FFAAAA;}
+
+
 /* additional formatting */
 .clean {clear:both;}
 .fright{float: right;}
@@ -557,7 +643,7 @@ dd input[type="text"]{
     margin-right: 5px;
     width: 400px;
     padding: 6px;
-    font-size: 14px;
+    font-size: 12px;
     color: rgb(102, 102, 102);
 }
 
@@ -596,7 +682,7 @@ ul.stats li strong {
 	padding: 0px;
 	
     display: block;
-    font-size: 36px;
+    font-size: 30px;
     font-weight: bold;
     color: rgb(0, 0, 0);
 }
@@ -606,7 +692,7 @@ ul.stats li span {
 	padding: 0px;
     display: block;
     margin-top: -10px;
-    font-size: 13px;
+    font-size: 11px;
     color: rgb(153, 153, 153);
 }
 
@@ -716,4 +802,40 @@ a.minibutton{
 	font-weight: normal;
 	color: #000;
 	margin-left: 5px;
+}
+
+.anim-rotate {
+    -moz-animation: 1s linear 0s normal none infinite anim-rotate;
+}
+
+/* problems */
+.problemlist ul, .problemlist li {
+    list-style: none outside none;
+}
+
+.problemlist li:first-child{
+	border-top: 0; 
+}
+
+.problemlist li {
+	border-top: 1px solid #133A87;
+}
+
+
+/* PAGING */
+.pager ul, .pager li{ 
+	display: inline;
+	margin: 4px;
+	padding: 0;
+	color: #339;
+	font-weight: bold;
+}
+
+.pager {
+    list-style: none outside none;
+}
+
+ul {
+    margin: 0px;
+    padding: 0px;
 }

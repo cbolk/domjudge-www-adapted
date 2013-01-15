@@ -211,6 +211,161 @@ function calcScoreRow($cid, $team, $prob) {
 }
 
 /**
+ * Scoreboard calculation
+ *
+ * This is here because it needs to be called by the judgedaemon script
+ * as well.
+ *
+ * Given a contestid, teamid and a problemid,
+ * (re)calculate the values for one row in the scoreboard.
+ *
+ * Due to current transactions usage, this function MUST NOT contain
+ * any START TRANSACTION or COMMIT statements.
+ */
+function calcLaboratoryStats($team, $prob) {
+	global $DB;
+
+	// Note the clause 'submittime < c.endtime': this is used to
+	// filter out TOO-LATE submissions from pending, but it also means
+	// that these will not count as solved. Correct submissions with
+	// submittime after contest end should never happen, unless one
+	// resets the contest time after successful judging.
+
+	$result = $DB->q("SELECT result, verified, submittime, 0 AS afterfreeze, c.cid
+	                  FROM submission s
+	                  LEFT JOIN judging j ON(s.submitid=j.submitid AND j.valid=1)
+	                  LEFT OUTER JOIN contest c ON(c.cid=s.cid)
+	                  WHERE teamid = %s AND probid = %s AND s.valid = 1
+	                  AND submittime < c.endtime
+	                  ORDER BY submittime", $team, $prob);
+
+	$cid = 	$DB->q("VALUE SELECT cid FROM problem WHERE probid = %s", $prob);
+
+				// reset vars
+				$submitted_j = $pending_j = $time_j = $correct_j = 0;
+				$submitted_p = $pending_p = $time_p = $correct_p = 0;
+
+				// for each submission
+				while( $row = $result->next() ) {
+
+					// Contest submit time in minutes for scoring.
+					$submittime = (int)floor(calcContestTime($row['submittime']) / 60);
+
+					// Check if this submission has a publicly visible judging result:
+					if ( (dbconfig_get('verification_required', 0) && ! $row['verified']) ||
+					     empty($row['result']) ) {
+
+						$pending_j++;
+						$pending_p++;
+						// Don't do any more counting for this submission.
+						continue;
+					}
+
+					$submitted_j++;
+					if ( $row['afterfreeze'] ) {
+						// Show submissions after freeze as pending to the public
+						// (if SHOW_PENDING is enabled):
+						$pending_p++;
+					} else {
+						$submitted_p++;
+					}
+
+					// if correct, don't look at any more submissions after this one
+					if ( $row['result'] == 'correct' ) {
+
+						$correct_j = 1;
+						$time_j = $submittime;
+						if ( ! $row['afterfreeze'] ) {
+							$correct_p = 1;
+							$time_p = $submittime;
+						}
+						// stop counting after a first correct submission
+						break;
+					}
+				}
+
+
+				// insert or update the values in the jury scores table
+				$DB->q('REPLACE INTO laboratory
+				        (cid, teamid, probid, submissions, pending, totaltime, is_correct)
+				        VALUES (%i,%s,%s,%i,%i,%i,%i)',
+				       $cid, $team, $prob, $submitted_j, $pending_j, $time_j, $correct_j);
+
+	return;
+}
+
+function calcHomeworkStats($team, $prob) {
+	global $DB;
+
+	// Note the clause 'submittime < c.endtime': this is used to
+	// filter out TOO-LATE submissions from pending, but it also means
+	// that these will not count as solved. Correct submissions with
+	// submittime after contest end should never happen, unless one
+	// resets the contest time after successful judging.
+
+	$result = $DB->q("SELECT result, verified, submittime, 0 AS afterfreeze, c.cid
+	                  FROM submission s
+	                  LEFT JOIN judging j ON(s.submitid=j.submitid AND j.valid=1)
+	                  LEFT OUTER JOIN contest c ON(c.cid=s.cid)
+	                  WHERE teamid = %s AND probid = %s AND s.valid = 1
+	                  AND submittime < c.endtime
+	                  ORDER BY submittime", $team, $prob);
+
+	$cid = 	$DB->q("VALUE SELECT cid FROM problem WHERE probid = %s", $prob);
+
+				// reset vars
+				$submitted_j = $pending_j = $time_j = $correct_j = 0;
+				$submitted_p = $pending_p = $time_p = $correct_p = 0;
+
+				// for each submission
+				while( $row = $result->next() ) {
+
+					// Contest submit time in minutes for scoring.
+					$submittime = (int)floor(calcContestTime($row['submittime']) / 60);
+
+					// Check if this submission has a publicly visible judging result:
+					if ( (dbconfig_get('verification_required', 0) && ! $row['verified']) ||
+					     empty($row['result']) ) {
+
+						$pending_j++;
+						$pending_p++;
+						// Don't do any more counting for this submission.
+						continue;
+					}
+
+					$submitted_j++;
+					if ( $row['afterfreeze'] ) {
+						// Show submissions after freeze as pending to the public
+						// (if SHOW_PENDING is enabled):
+						$pending_p++;
+					} else {
+						$submitted_p++;
+					}
+
+					// if correct, don't look at any more submissions after this one
+					if ( $row['result'] == 'correct' ) {
+
+						$correct_j = 1;
+						$time_j = $submittime;
+						if ( ! $row['afterfreeze'] ) {
+							$correct_p = 1;
+							$time_p = $submittime;
+						}
+						// stop counting after a first correct submission
+						break;
+					}
+				}
+
+
+				// insert or update the values in the jury scores table
+				$DB->q('REPLACE INTO homework
+				        (cid, teamid, probid, submissions, pending, totaltime, is_correct)
+				        VALUES (%i,%s,%s,%i,%i,%i,%i)',
+				       $cid, $team, $prob, $submitted_j, $pending_j, $time_j, $correct_j);
+
+	return;
+}
+/**
  * Determines final result for a judging given an ordered array of
  * testcase results. Testcase results can have value NULL if not run
  * yet. A return value of NULL means that a final result cannot be
@@ -664,6 +819,114 @@ function submit_solution($team, $prob, $lang, $files, $filenames, $origsubmitid 
 
 	return $id;
 }
+
+/**
+ * This function takes a temporary file of a submission,
+ * validates it and puts it into the database. Additionally it
+ * moves it to a backup storage.
+ */
+function submit_solution_byjury($team, $prob, $lang, $files, $filenames, $origsubmitid = NULL)
+{
+	if( empty($team) ) error("No value for Team.");
+	if( empty($prob) ) error("No value for Problem.");
+	if( empty($lang) ) error("No value for Language.");
+
+	if ( !is_array($files) || count($files)==0 ) error("No files specified.");
+	if ( !is_array($filenames) || count($filenames)!=count($files) ) {
+		error("Nonmatching (number of) filenames specified.");
+	}
+
+	if ( count($filenames)!=count(array_unique($filenames)) ) {
+		error("Duplicate filenames detected.");
+	}
+
+	global $cdata,$cid, $DB;
+
+	$sourcesize = dbconfig_get('sourcesize_limit');
+
+	// If no contest has started yet, refuse submissions.
+	$now = now();
+
+	// Check 2: valid parameters?
+	if( ! $langid = $DB->q('MAYBEVALUE SELECT langid FROM language WHERE
+						  langid = %s AND allow_submit = 1', $lang) ) {
+		error("Language '$lang' not found in database or not submittable.");
+	}
+	if( ! $login = $DB->q('MAYBEVALUE SELECT login FROM team WHERE login = %s',$team) ) {
+		error("Team '$team' not found in database.");
+	}
+	$team = $login;
+	if( ! $probid = $DB->q('MAYBEVALUE SELECT probid FROM problem WHERE probid = %s', $prob) ) {
+		error("Problem '$prob' not found in database.");
+	}
+
+	// Reindex arrays numerically to allow simultaneously iterating
+	// over both $files and $filenames.
+	$files     = array_values($files);
+	$filenames = array_values($filenames);
+
+	$totalsize = 0;
+	for($i=0; $i<count($files); $i++) {
+		if ( ! is_readable($files[$i]) ) {
+			error("File '".$files[$i]."' not found (or not readable).");
+		}
+		if ( ! preg_match(FILENAME_REGEX, $filenames[$i]) ) {
+			error("Illegal filename '".$filenames[$i]."'.");
+		}
+		$totalsize += filesize($files[$i]);
+	}
+	if ( $totalsize > $sourcesize*1024 ) {
+		error("Submission file(s) are larger than $sourcesize kB.");
+	}
+
+	logmsg (LOG_INFO, "input verified");
+
+	// Insert submission into the database
+	$id = $DB->q('RETURNID INSERT INTO submission
+				  (cid, teamid, probid, langid, submittime, origsubmitid)
+				  VALUES (%i, %s, %s, %s, %s, %i)',
+	             $cid, $team, $probid, $langid, $now, $origsubmitid);
+
+	for($rank=0; $rank<count($files); $rank++) {
+		$DB->q('INSERT INTO submission_file
+		        (submitid, filename, rank, sourcecode) VALUES (%i, %s, %i, %s)',
+		       $id, $filenames[$rank], $rank, getFileContents($files[$rank], false));
+	}
+
+	// Recalculate scoreboard cache for pending submissions
+	calcScoreRow($cid, $team, $probid);
+
+	// Log to event table
+	$DB->q('INSERT INTO event (eventtime, cid, teamid, langid, probid, submitid, description)
+	        VALUES(%s, %i, %s, %s, %s, %i, "problem submitted by jury")',
+	       now(), $cid, $team, $langid, $probid, $id);
+
+	if ( is_writable( SUBMITDIR ) ) {
+		// Copy the submission to SUBMITDIR for safe-keeping
+		for($rank=0; $rank<count($files); $rank++) {
+			$fdata = array('cid' => $cid,
+			               'submitid' => $id,
+			               'teamid' => $team,
+			               'probid' => $probid,
+			               'langid' => $langid,
+			               'rank' => $rank,
+			               'filename' => $filenames[$rank]);
+			$tofile = SUBMITDIR . '/' . getSourceFilename($fdata);
+			if ( ! @copy($files[$rank], $tofile) ) {
+				warning("Could not copy '" . $files[$rank] . "' to '" . $tofile . "'");
+			}
+		}
+	} else {
+		logmsg(LOG_DEBUG, "SUBMITDIR not writable, skipping");
+	}
+
+	if( difftime($cdata['endtime'], $now) <= 0 ) {
+		logmsg(LOG_INFO, "The contest is closed, submission stored but not processed. [c$cid]");
+	}
+
+	return $id;
+}
+
 /**
  * Compute the filename of a given submission.
  */

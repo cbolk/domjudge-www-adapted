@@ -333,6 +333,10 @@ function judge($mark, $row, $judgingid)
 			error("Could not create $srcfile");
 		}
 	}
+	//CBOLK
+	//retrieves the main and prototypes from table problem for supporting the submissions of
+	//subprograms only
+	$mainsrc = $DB->q('MAYBEVALUE SELECT main FROM problem WHERE probid= %i', $row['probid']);
 
 	// Compile the program.
 	system(LIBJUDGEDIR . "/compile.sh $row[langid] '$workdir' " .

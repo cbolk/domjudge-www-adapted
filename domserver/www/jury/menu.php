@@ -21,6 +21,9 @@
 <li><a href="submissions.php" accesskey="s">submissions</a></li>
 <li><a href="scoreboard.php" accesskey="b">scoreboard</a></li>
 <li><a href="participation.php" accesskey="p">participation</a></li>
+<li><a href="upload4student.php" accesskey="u">upload</a></li>
+<li><a href="eval_laboratory.php" accesskey="l">lab</a></li>
+<li><a href="eval_homework.php" accesskey="e">exs</a></li>
 </ul>
 </div>
 

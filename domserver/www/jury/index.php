@@ -30,7 +30,14 @@ if ( is_readable('../images/DOMjudgelogo.png') ) {
 <li><a href="teams.php">Teams</a></li>
 <li><a href="team_categories.php">Team Categories</a></li>
 <li><a href="team_affiliations.php">Team Affiliations</a></li>
+</ul>
+
+<h3>Personalized:</h3>
+<ul>
 <li><a href="participation.php">Team Participation</a></li>
+<li><a href="eval_laboratory.php">Laboratory</a> (<a href="refresh_laboratory.php">refresh</a>)</li>
+<li><a href="eval_homework.php">Exercises</a> (<a href="refresh_homework.php">refresh</a>)</li>
+<li><a href="upload4student.php">Manual Upload</a></li>
 </ul>
 
 <?php if ( IS_ADMIN ): ?>

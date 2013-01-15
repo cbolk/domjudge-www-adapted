@@ -284,4 +284,6 @@ if ( $submission['origsubmitid'] ) {
 
 echo $html;
 
+echo "\n<script type=\"text/javascript\">SyntaxHighlighter.all()</script>";
+
 require(LIBWWWDIR . '/footer.php');

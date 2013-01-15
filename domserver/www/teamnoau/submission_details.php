@@ -1,0 +1,91 @@
+<?php
+/**
+ * Gives a team the details of a judging of their submission: errors etc.
+ *
+ * $Id: submission_details.php 3209 2010-06-12 00:13:43Z eldering $
+ *
+ * Part of the DOMjudge Programming Contest Jury System and licenced
+ * under the GNU GPL. See README and COPYING for details.
+ */
+
+require('init.php');
+$title = 'Submission details';
+require(LIBWWWDIR . '/header.php');
+
+$sid = (int)@$_GET['id'];
+
+
+// select also on teamid so we can only select our own submissions
+$row = $DB->q('MAYBETUPLE SELECT p.probid, p.name AS probname, submittime,
+               s.valid, l.name AS langname, result, output_compile
+			   FROM judging j
+               LEFT JOIN submission s USING (submitid)
+               LEFT JOIN language   l USING (langid)
+               LEFT JOIN problem    p ON (p.probid = s.probid)
+               WHERE j.submitid = %i AND teamid = %s AND j.valid = 1',$sid,$login);
+
+if( ! $row ) {
+	echo "<p>Submission not found for this team.</p>\n";
+	require(LIBWWWDIR . '/footer.php');
+	exit;
+}
+
+echo "<h1>Submission details</h1>\n";
+
+if( ! $row['valid'] ) {
+	echo "<p>This submission is being ignored.<br />\n" .
+		"It is not used in determining your score.</p>\n\n";
+}
+$languageicon = '../images/languages/' . strtolower($row['langname']) . '_file.png';
+?>
+
+<table>
+<tr><td scope="row">Problem:</td>
+	<td><?php echo htmlspecialchars($row['probname'])?> [<span class="probid"><?php echo
+	htmlspecialchars($row['probid']) ?></span>]</td></tr>
+<tr><td scope="row">Submitted at:</td>
+	<td><?php echo printtime($row['submittime'])?></td></tr>
+<tr><td scope="row">Language:</td>
+<?php
+if ( is_readable($languageicon) ) {
+			echo '<td><img class="imgmiddle" src="' . $languageicon . '"' .
+				 ' alt="'   . htmlspecialchars($row['langname']) . '"' .
+				 ' title="' . htmlspecialchars($row['langname']) . '" /></td>';
+		} else { ?>
+			<td><?php echo htmlspecialchars($row['langname'])?></td>
+<?php
+		}
+?>
+	</tr>
+
+<tr><td scope="row">Result:</td>
+
+
+<td><?php echo printresult($row['result'], TRUE)?>
+	<img src='../images/<?php echo $row['result']?>.png' style='vertical-align:text-bottom;'/></td></tr>
+<tr><td scope="row">Source:</td>
+	<td><a href='./show_source.php?id=<?php echo $sid?>'>view code</a></td></tr>
+</table>
+<?php
+
+if ( (SHOW_COMPILE == 2) ||
+     (SHOW_COMPILE == 1 && $row['result'] == 'compiler-error') ) {
+
+	echo "<h2>Compilation output</h2>\n\n";
+
+	if(@$row['output_compile']) {
+		echo "<pre class=\"output_text\">\n".
+			htmlspecialchars(@$row['output_compile'])."\n</pre>\n\n";
+
+		echo "<p><em>Compilation " .
+			( $row['result']=='compiler-error' ? 'failed' : 'successful' ) .
+			"</em></p>\n";
+	} else {
+		echo "<p class=\"nodata\">There were no compiler errors or warnings.</p>\n";
+	}
+} else {
+	echo "<p class=\"nodata\">Compilation output is disabled.</p>\n";
+}
+
+
+require(LIBWWWDIR . '/footer.php');

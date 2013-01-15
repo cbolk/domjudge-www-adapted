@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id: submit_copy.sh 2665 2009-05-01 23:18:14Z eldering $
 
 # Script to copy a submission file from a team to judge account.
 # Usage: $0 <team> <fromfile> <tofile>

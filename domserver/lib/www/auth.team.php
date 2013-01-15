@@ -94,6 +94,25 @@ function show_loginpage()
 
 	switch ( AUTH_METHOD ) {
 	case 'IPADDRESS':
+	if ( NONINTERACTIVE ) error("Not authenticated");
+	$title = 'Not Authenticated';
+	$menu = false;
+
+	include(LIBWWWDIR . '/header.php');
+	?>
+	<h1>Not Authenticated</h1>
+
+	<p>Sorry, we are unable to identify you as a valid team
+	(IP <?php echo htmlspecialchars($ip); ?>).</p>
+
+	<p>
+	Please contact a staff member for assistance.
+	</p>
+	<?php
+			putDOMjudgeVersion();
+			include(LIBWWWDIR . '/footer.php');
+			break;
+
 	case 'PHP_SESSIONS':
 		if ( NONINTERACTIVE ) error("Not authenticated");
 		$title = 'Not Authenticated';
@@ -387,7 +406,7 @@ function do_auth()
 
 		if ( !$teamdata ) {
 			sleep(3);
-			show_failed_login("This user has no access to this application.<br/>" .
+			show_failed_login("This user (" . $user. ") has no access to this application.<br/>" .
 			                  "Please contact a staff member <a href='mailto:bolchini@elet.polimi.it?subject=richiesta accesso webapp sfide' class='login_request'></a> to be enabled.");
 		}
 

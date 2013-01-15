@@ -310,7 +310,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 		'<col id="scoreteamname" /></colgroup><colgroup><col id="scoresolv" />' .
 		"<col id=\"scoretotal\" /></colgroup>\n<colgroup>" .
 		str_repeat('<col class="scoreprob" />', count($probs)) .
-		"</colgroup>\n";
+		"</colgroup>";
 
 	// column headers
 	echo '<tr>' .
@@ -430,7 +430,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 			$str = $matrix[$team][$prob]['num_submissions'];
 			// if correct, print time scored
 			if( $matrix[$team][$prob]['is_correct'] ) {
-				$str .= ' (' . $matrix[$team][$prob]['time'] . ' + ' .
+				$str .= '&nbsp;(' . $matrix[$team][$prob]['time'] . '&nbsp;+&nbsp;' .
 				               $matrix[$team][$prob]['penalty'] . ')';
 			}
 			echo '>' . jurylink('team.php?id=' . urlencode($team) .
@@ -445,7 +445,7 @@ function renderScoreBoard($cdata, $sdata, $myteamid = null, $static = FALSE) {
 	echo '<tr id="scoresummary" title="#submitted / #correct / fastest time">' .
 		'<td title="total teams aright">' .
 		jurylink(null,count($teams)) . '</td>' .
-		'<td colspan="2"></td>' .
+		( $SHOW_AFFILIATIONS ? '<td colspan="2"></td>' : '' ) .
 		'<td title=" "></td>' .
 		'<td title="total solved" class="scorenc">' . jurylink(null,$summary['num_correct'])  . '</td><td title=" "></td>';
 
