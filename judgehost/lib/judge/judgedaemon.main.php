@@ -382,14 +382,27 @@ function judge($mark, $row, $judgingid)
 	$testcasedir = $workdir . "/testcase" . sprintf('%03d', $tc['rank']);
 
 	// Get both in- and output files, only if we didn't have them already.
+	// CBOLK
+	$tciofile = array();
+	$fname = array();
+	$programinout = array();	
 	$tcfile = array();
 	foreach(array('input','output') as $inout) {
 		$tcfile[$inout] = "$workdirpath/testcase/testcase.$tc[probid].$tc[rank]." .
 		    $tc['md5sum_'.$inout] . "." . substr($inout, 0, -3);
-
+		//input/output file: testcase.#prob.#rank.file.in or testcase.#prob.#rank.file.out
+		$tciofile[$inout] = "$workdirpath/testcase/testcase.$tc[probid].$tc[rank].file.". substr($inout, 0, -3);
+		$iofile = substr($inout, 0, 1) . "file"; 
 		if ( !file_exists($tcfile[$inout]) ) {
 			$content = $DB->q("VALUE SELECT SQL_NO_CACHE $inout FROM testcase
 	 		                   WHERE testcaseid = %i", $tc['testcaseid']);
+			//CBOLK
+	 		$filename = $DB->q("VALUE SELECT $iofile FROM testcase
+				 		       WHERE testcaseid = %i", $tc['testcaseid']);
+	 		if($filename != NULL && $filename != "") $fname[$inout] = $filename;
+	 		//CBolk: managing input from file
+			logmsg(LOG_NOTICE, "gathering new data for testcases .. ");
+	 		// standard input / output, from stdin
 			if ( file_put_contents($tcfile[$inout] . ".new", $content) === FALSE ) {
 				error("Could not create $tcfile[$inout].new");
 			}
@@ -399,9 +412,32 @@ function judge($mark, $row, $judgingid)
 			} else {
 				error("File corrupted during download.");
 			}
+	 		if($fname[$inout] == NULL || $fname[$inout] == ""){
+				$programinout[$inout] = $tcfile[$inout];
+			} else {
+				// CBolk: there is the name of the file to be provided in input
+				// the name of the file MUST be the content of testdata.in provided in input
+				// 
+				// the name of the file containing the actual data
+				if ( file_put_contents($tciofile[$inout], "./" . $fname[$inout] . "\n") === FALSE ) {
+					error("Could not create $tciofile[$inout]");
+				}
+				$programinout[$inout] = $tciofile[$inout];				
+			}
 			logmsg(LOG_NOTICE, "Fetched new $inout testcase $tc[rank] for " .
 			       "problem $row[probid]");
+		} else {
+			// the file is already there
+			$filename = $DB->q("VALUE SELECT $iofile FROM testcase
+			                  WHERE testcaseid = %i", $tc['testcaseid']);
+			if($filename != NULL && $filename != "") $fname[$inout] = $filename;
+			if( file_exists($tciofile[$inout]) ) 
+				$programinout[$inout] = $tciofile[$inout];
+			else 
+				$programinout[$inout] = $tcfile[$inout];
+			logmsg(LOG_DEBUG, "testcase '$programinout[$inout]' exists ... " .$filename);
 		}
+		logmsg(LOG_DEBUG, "testcase '$tcfile[$inout]' available");
 		// sanity check (NOTE: performance impact is negligible with 5
 		// testcases and total 3.3 MB of data)
 		if ( md5_file($tcfile[$inout]) != $tc['md5sum_' . $inout] ) {
@@ -418,7 +454,16 @@ function judge($mark, $row, $judgingid)
 	system("cp -pPRl '$workdir'/compile/* '$programdir'", $retval);
 	if ( $retval!=0 ) error("Could not copy program to '$programdir'");
 
+	if(file_exists($tciofile['input'])){
+		logmsg(LOG_DEBUG, "copying   " . $tcfile['input'] . " in  " . $testcasedir . "/" . $fname['input']);
+		system("cp -dpRl " . $tcfile['input'] . "  " . $testcasedir . "/" . $fname['input'], $retval);
+		if ( $retval!=0 ) error("Could not copy program to '$testcasedir'");
+	}
+
 	// do the actual test-run
+	logmsg(LOG_DEBUG, "/testcase_run.sh $programinout[input] $programinout[output] " .
+	       "$row[maxruntime] '$testcasedir' " .
+	       "'$row[special_run]' '$row[special_compare]'");
 	system(LIBJUDGEDIR . "/testcase_run.sh $tcfile[input] $tcfile[output] " .
 	       "$row[maxruntime] '$testcasedir' " .
 	       "'$row[special_run]' '$row[special_compare]'", $retval);
