@@ -319,6 +319,7 @@ function judge($mark, $row, $judgingid)
 		warning("Found stale working directory; renamed to '$oldworkdir'");
 	}
 
+	//source code
 	system("mkdir -p '$workdir/compile'", $retval);
 	if ( $retval != 0 ) error("Could not create '$workdir/compile'");
 
@@ -357,10 +358,11 @@ function judge($mark, $row, $judgingid)
 	// FIXME(?): result is still returned as in EXITCODES.
 	if ( ($result = $EXITCODES[$retval])=='correct' ) {
 
+	// CB Modified to manage input from files
 	logmsg(LOG_DEBUG, "Fetching testcases from database");
 	$testcases = $DB->q("KEYTABLE SELECT rank AS ARRAYKEY,
- 	                     testcaseid, md5sum_input, md5sum_output, probid, rank
-	                     FROM testcase WHERE probid = %s ORDER BY rank", $row['probid']);
+			 	         testcaseid, md5sum_input, md5sum_output, ifile, ofile, probid, rank
+				          FROM testcase WHERE probid = %s ORDER BY rank", $row['probid']);
 	if ( count($testcases)==0 ) {
 		error("No testcase found for problem " . $row['probid']);
 	}
@@ -380,7 +382,7 @@ function judge($mark, $row, $judgingid)
 
 	logmsg(LOG_DEBUG, "Running testcase $tc[rank]...");
 	$testcasedir = $workdir . "/testcase" . sprintf('%03d', $tc['rank']);
-
+	logmsg(LOG_INFO, "Testcase directory: $testcasedir");
 	// Get both in- and output files, only if we didn't have them already.
 	// CBOLK
 	$tciofile = array();
@@ -435,7 +437,7 @@ function judge($mark, $row, $judgingid)
 				$programinout[$inout] = $tciofile[$inout];
 			else 
 				$programinout[$inout] = $tcfile[$inout];
-			logmsg(LOG_DEBUG, "testcase '$programinout[$inout]' exists ... " .$filename);
+			logmsg(LOG_INFO, "testcase '$programinout[$inout]' exists ... " .$filename);
 		}
 		logmsg(LOG_DEBUG, "testcase '$tcfile[$inout]' available");
 		// sanity check (NOTE: performance impact is negligible with 5
@@ -449,6 +451,7 @@ function judge($mark, $row, $judgingid)
 	// dir. Use hardlinks to preserve space with big executables.
 	$programdir = $testcasedir . '/execdir';
 	system("mkdir -p '$programdir'", $retval);
+	
 	if ( $retval!=0 ) error("Could not create directory '$programdir'");
 
 	system("cp -pPRl '$workdir'/compile/* '$programdir'", $retval);

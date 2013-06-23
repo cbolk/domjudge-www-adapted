@@ -42,7 +42,9 @@ require(LIBWWWDIR . '/header.php');
 	Questo si verifica di solito per problemi di allocazione di memoria, di accessi a indirizzi sbagliati, di divisioni per zero.</td></tr>
 <tr><td style="vertical-align: top;"><img class="vmiddle" src="../images/compiler-error.png" alt="compilation error"/></td><td style="vertical-align: top;"><span class="sol sol_incorrect">compilation error</span></td>
 	<td>Non &egrave; stato possibile compilare il programma.<br/>
-	Controlla con attenzione i messaggi generati dal compilatore (facendo distinzione tra avvertimenti - Warning - ed errori - Error).</td></tr>
+	Controlla con attenzione i messaggi generati dal compilatore (facendo distinzione tra avvertimenti - Warning - ed errori - Error).<br/>
+	Il compilatore viene chiamato con le seguenti opzioni:<br/>
+	<tt>-Wall -O2 -std=c89 -pedantic -static</tt></td></tr>
 <tr><td colspan="3">&lt; <a href='index.php'>back</a></td></tr>
 </table>
 </center>

@@ -95,12 +95,12 @@ function show_loginpage()
 	switch ( AUTH_METHOD ) {
 	case 'IPADDRESS':
 	if ( NONINTERACTIVE ) error("Not authenticated");
-	$title = 'Not Authenticated';
+	$title = 'Not Authenticated - Login page';
 	$menu = false;
 
 	include(LIBWWWDIR . '/header.php');
 	?>
-	<h1>Not Authenticated</h1>
+	<h1>Not Authenticated (with IP)</h1>
 
 	<p>Sorry, we are unable to identify you as a valid team
 	(IP <?php echo htmlspecialchars($ip); ?>).</p>
@@ -115,19 +115,29 @@ function show_loginpage()
 
 	case 'PHP_SESSIONS':
 		if ( NONINTERACTIVE ) error("Not authenticated");
-		$title = 'Not Authenticated';
+		$title = 'Not Authenticated!';
 		$menu = false;
 
 		include(LIBWWWDIR . '/header.php');
 		?>
-<h1>Not Authenticated</h1>
+<h1>Not Authenticated -- Login page</h1>
 
 <p>Sorry, we are unable to identify you as a valid team
 (IP <?php echo htmlspecialchars($ip); ?>).</p>
 
 <p>
-Please contact a staff member for assistance.
+Please supply team credentials below, or contact a staff member for assistance.
 </p>
+
+<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post">
+<input type="hidden" name="cmd" value="login" />
+<table>
+<tr><td><label for="login">Login:</label></td><td><input type="text" id="login" name="login" value="" size="15" maxlength="15" accesskey="l" /></td></tr>
+<tr><td><label for="passwd">Password:</label></td><td><input type="password" id="passwd" name="passwd" value="" size="15" maxlength="255" accesskey="p" /></td></tr>
+<tr><td colspan="2" align="center"><input type="submit" value="Login" /></td></tr>
+</table>
+</form>
+
 
 <?php
 		putDOMjudgeVersion();
@@ -157,7 +167,7 @@ function do_login()
 		$user = trim($_POST['login']);
 		$pass = trim($_POST['passwd']);
 
-		$title = 'Authenticate user';
+		$title = 'Authenticating user';
 		$menu = false;
 
 		if ( empty($user) || empty($pass) ) {
@@ -446,7 +456,7 @@ function show_authpage()
 	switch ( AUTH_METHOD ) {
 	case 'PHP_SESSIONS':
 		if ( NONINTERACTIVE ) error("Not authenticated");
-		$title = 'Not Authenticated';
+		$title = 'Not Authenticated -- Authentication page';
 		$menu = false;
 
 		include(LIBWWWDIR . '/header.php');
