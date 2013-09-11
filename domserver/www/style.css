@@ -839,3 +839,6 @@ ul {
     margin: 0px;
     padding: 0px;
 }
+
+@font-face{font-family:'FontAwesome';src:url("./fonts/fontawesome-webfont.eot?v=3.2.1");src:url("./fonts/fontawesome-webfont.eot?#iefix&v=3.2.1") format("embedded-opentype"),url("./fonts/fontawesome-webfont.woff?v=3.2.1") format("woff"),url("./fonts/fontawesome-webfont.ttf?v=3.2.1") format("truetype"),url("./fonts/fontawesome-webfont.svg#fontawesomeregular?v=3.2.1") format("svg");font-weight:normal;font-style:normal}
+[class^="icon-"]{font-family:FontAwesome;font-weight:normal;font-size: 1.8em;font-style:normal;text-decoration:inherit;-webkit-font-smoothing:antialiased;*margin-right:.3em;color: #133A87;}

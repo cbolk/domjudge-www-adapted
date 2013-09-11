@@ -142,6 +142,7 @@ if( count($res) == 0 ) {
 	     "<th scope=\"col\">freeze<br />scores</th>" .
 	     "<th scope=\"col\">unfreeze<br />scores</th>" .
 	     "<th scope=\"col\">name</th>" .
+	     "<th scope=\"col\">print</th>" .
 	     "<th>edit</th><th>del</th><th></th></tr>\n</thead>\n<tbody>\n";
 
 	$iseven = false;
@@ -167,7 +168,8 @@ if( count($res) == 0 ) {
 			"<td title=\"".htmlspecialchars(@$row['unfreezetime']) . "\">" .
 				$link . ( isset($row['unfreezetime']) ?
 			  strftime("%d-%m-%y %R", strtotime($row['unfreezetime'])) : '-' ) . "</a></td>\n" .
-			"<td>" . $link . htmlspecialchars($row['contestname']) . "</a></td>\n";
+			"<td>" . $link . htmlspecialchars($row['contestname']) . "</a></td>\n" . 
+			"<td class=\"editdel acenter\"><a target=_blank href='contest_print.php?id=" . urlencode($row['cid']) . "'><i class='icon-mail-reply'>&#xf02f;</i> </a></td>\n";
 		$iseven = ! $iseven;
 
 		if ( IS_ADMIN ) {

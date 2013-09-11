@@ -258,6 +258,74 @@ function renderContestFull($cdata, $sdata, $myteamid = null, $static = FALSE) {
 }
 
 /**
+ * Output the general scoreboard based on the cached data in table
+ * 'scoreboard'. $myteamid can be passed to highlight a specific row.
+ * If this function is called while IS_JURY is defined, the scoreboard
+ * will always be current, regardless of the freezetime setting in the
+ * contesttable. $static generates output suitable for static html pages.
+ * 
+ * PRINT-ONLY VERSION
+ */
+
+function renderContestFullPrint($cid, $sdata, $myteamid = null, $static = FALSE) {
+	setlocale(LC_TIME, "it_IT");
+	$cname = getContestName($cid);
+
+	// 'unpack' the contest data:
+	$teams   = $sdata['partecipants'];
+	$probs   = $sdata['problems'];
+	$tests   = $sdata['testcases'];
+	$subs  = $sdata['submissions'];
+	unset($sdata);
+
+	$nprobs = 0;
+	$prarray = array();
+	while($problem = $probs->next()){
+		$prarray[$nprobs] = $problem;
+		$nprobs++;
+	}
+
+	$nparts = 0;
+	while($part = $teams->next()){
+		$nparts = $nparts + $part['numpartecipants'];
+	}
+
+	//testcases per problem
+	$tdata = array();
+	$i =0;
+	while($testcase = $tests->next()){
+	    $tdata[$testcase['probid']][$testcase['rank']] = $testcase;
+	    $i= $i+1;
+	}
+		
+	echo "<h2 class='black'>$cname</h2>";
+//	echo "<div class='content_box'>";
+	echo "<div class='coding'>";
+	echo "<div class='description'><a name='problemdescription'></a>\n";
+	
+	// problem description
+	if($nprobs == 1){	
+		$pid = $prarray[0]['probid'];
+		renderProblem($prarray[0], $tdata[$pid], TRUE, $static);
+	} else {
+		echo "\n<ul class='problemlist'>\n";
+		for($i = 0; $i < $nprobs; $i++){
+			$pid = $prarray[$i]['probid'];
+			echo "\n<li>";
+			renderProblem($prarray[$i], $tdata[$pid], FALSE, $static);
+			echo "</li>";
+		}
+		echo "</ul>";
+	}
+	
+	echo "</div>"; /* description */
+	echo "</div>"; /* coding */
+//	echo "</div>"; /* content_box */	
+	echo "</div>"; /* main */
+	return;
+}
+
+/**
  * Specification for the single problem
  *
  */
@@ -344,6 +412,8 @@ function putContestFull($cdata, $myteamid = null, $static = FALSE) {
 	renderContestFull($cdata,$sdata,$myteamid,$static);
 }
 
+
+
 /**
  * Wraps up some stats on the latest closed contest
  */
@@ -425,6 +495,14 @@ function isContestClosed($cdata){
 	return 0;
 }
 
+function getContestName($cid)
+{
+	global $DB;
+	$row = $DB->q('TUPLE SELECT * FROM contest WHERE cid = %i', $cid);
+	$cname = $row['contestname'];
+	return $cname;
+
+}
 
 function getContextStartTime($cid)
 {
@@ -444,13 +522,24 @@ function getContestFromProblem($probid)
 				FROM problem
 				WHERE probid = " . $probid . ";";
 	$cid = $DB->q($strSQL);
-	return $cid;
+	return  $cid;
 }
 
 function putProblemAsViewed($probid)
 {
-	global $DB;
 	$cid = getContestFromProblem($probid);
 	putContestFull($cid, NULL, TRUE);
 	return;
 }
+
+/**
+ * view contest details
+ * PRINT-ONLY VERSION
+ */
+function renderContestPrint($cid)
+{
+	$sdata = genContestFull($cid);
+	renderContestFullPrint($cid,$sdata, NULL, TRUE);
+	return;
+}
+

@@ -282,39 +282,18 @@ h1 {
 
 
 .clock-date {
-	float: left;
-	font-family: Andika, 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
-	border-color: #EEE;
-	border: 1px solid #E9E9E9;
-	border-bottom-color: whiteSmoke;
-	border-radius: 5px;
-	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.2);
-	box-shadow: 0 1px 1px rgba(0,0,0,0.2);
-	text-align: center;
-	padding: 6px;
 	display: none;
 }
 
 .clock-date strong{ 
-	padding-top: 18px;
-	padding-bottom: 12px;
-	text-shadow: white 1px 1px 0px;
-	font-size: 3.5em;
-	display: block;
-	color: #133A87;
 	display: none;
 }
 .clock-date em {
-	font-style: normal;
-	font-size: 1.1em;
-	color: #8A8A8A;
 	display: none;
 }
 
 #timeleft {
-/*	background: url(./images/bg_date_bot.gif) bottom left no-repeat;
-*/	color: #FF0000;
-	font-size: 0.9em;
+	display: none;
 	}
 
 #footer {
