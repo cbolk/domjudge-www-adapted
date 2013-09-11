@@ -250,7 +250,7 @@ class db
 					break;
 				default:
 					throw new InvalidArgumentException(
-					    "Unkown %-code: " . $part{0});
+					    "Unknown %-code: " . $part{0});
 			}
 
 		}
@@ -355,17 +355,14 @@ class db
 			case 1062:	// duplicate key
 			throw new UnexpectedValueException("Item with this key already"
 			    . " exists.\n" . $callsite . mysql_error($this->_connection));
-
 			case 1217:  // foreign key constraint
 			throw new UnexpectedValueException("This operation would have"
 			    . " brought the database in an inconsistent state,\n"
 			    . $callsite . mysql_error($this->_connection));
-
 			case 2006:	// MySQL server has gone away
 			throw new RuntimeException("MySQL server has gone away");
-
 			default:
-			throw new RuntimeException("SQL syntax-error, " . $callsite
+			throw new RuntimeException("SQL error, " . $callsite
 			    . "Error#" . mysql_errno($this->_connection) . ": "
 			    . mysql_error($this->_connection) . ", query: '$query'");
 		}

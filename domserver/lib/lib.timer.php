@@ -6,7 +6,6 @@
  * under the GNU GPL. See README and COPYING for details.
  */
 
-
 global $DEBUG_NUM_QUERIES;
 $DEBUG_NUM_QUERIES = 0;
 
