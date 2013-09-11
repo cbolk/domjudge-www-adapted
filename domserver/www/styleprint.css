@@ -200,29 +200,17 @@ td.scorenc { border-color: silver; }
 /* EXTRAS */
 body{text-align: center;}
 #main {
-	width: 800px;
-	margin-left: auto;
-	margin-right: auto;
-	padding: 15px;
+	margin: 0px;
 	background-color: white;
-	min-height: 600px;
 	text-align: left;
 }	
 
 h1 {
-	font-size: 30px;
-	border-bottom: 1px solid #CCC;
-	color: #393939;
+	font-size: 18px;
 	display: block;
-	font-style: normal;
-	font-variant: normal;
-	font-weight: bold;
-	height: 30px;
-	line-height: 30px;
 	margin: 0px;
-	margin-top: 20px;
-	margin-bottom: 20px;
-	padding: 0px 10px 10px 0px;
+	padding: 0px;
+	margin-bottom: 10px;
 	text-align: center;
 }
 
@@ -280,37 +268,13 @@ h1 {
 }
 
 
-
-.clock-date {
-	display: none;
-}
-
-.clock-date strong{ 
-	display: none;
-}
-.clock-date em {
-	display: none;
-}
+#clock {display: none;}
 
 #timeleft {
 	display: none;
 	}
 
 #footer {
-	background-color: transparent;
-	bottom: 0px;
-	color: #636363;
-	display: block;
-	line-height: 18px;
-	border-top:1px solid #E9E9E9;
-	margin-top: 20px;
-	padding-bottom: 0px;
-	padding-left: 0px;
-	padding-right: 0px;
-	padding-top: 0px;
-	position: relative;
-	font-size: 13px;
-	text-align: center;
 	display: none;
 }
 
@@ -325,19 +289,7 @@ h1 {
 .imgmiddle img {vertical-align: middle; padding: 0px;}
 
 
-#toptitle{
-/*	width: 1000px; */
-	font-size: 22px;
-	text-align: center;
-	color:  #133A87;
-	font-weight: bold;
-	border-bottom: whiteSmoke 2px solid;
-/*	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.2); */
-/*	box-shadow: 0 1px 1px rgba(0,0,0,0.2); */
-	padding: 10px;
-	display: none;
-}
-#toptitle a{text-decoration: none;}
+#toptitle{display: none;}
 
 .pagetitle {
 	color: #FFF;
